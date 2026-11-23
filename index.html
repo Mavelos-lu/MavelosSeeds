@@ -1,1 +1,1507 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SeedListeStock | Mavelos</title>
 
+    <!-- Google Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        tealbrand: {
+                            DEFAULT: '#009688',
+                            dark: '#00796B',
+                            soft: '#E0F2F1',
+                        },
+                        surface: {
+                            bg: '#F5F7F7',
+                            card: '#FFFFFF',
+                            border: '#E2E8E8',
+                        },
+                        ink: {
+                            primary: '#1E292B',
+                            secondary: '#5F7174',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html, body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #F5F7F7;
+            color: #1E292B;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+
+        /* Sauberes Custom-Select-Pfeil-Icon */
+        select.clean-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%235F7174' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem center;
+            background-size: 0.95rem 0.95rem;
+        }
+
+        /* Zahleneingabe ohne störende Browser-Pfeile */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-up {
+            animation: fadeUp 0.18s ease-out both;
+        }
+    </style>
+</head>
+<body class="bg-surface-bg text-ink-primary min-h-screen flex flex-col selection:bg-tealbrand-soft selection:text-tealbrand-dark">
+
+    <!-- ==================== HEADER ==================== -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-surface-border">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+            <!-- Links: Mavelos Logo + Titel + Status/Anzahl -->
+            <div class="flex items-center gap-3 min-w-0">
+                <img
+                    src="https://www.mavelos.lu/wp-content/uploads/2023/04/Mavelos_CBD-LUX-Luxembourg_Cannabis_logo_Transparent_margin-261x300.png"
+                    alt="Mavelos Logo"
+                    class="h-11 w-auto object-contain shrink-0 rounded-lg"
+                    onerror="this.style.display='none';"
+                >
+                <div class="min-w-0 flex items-center gap-2.5 flex-wrap">
+                    <h1 class="text-lg sm:text-xl font-bold tracking-tight text-ink-primary truncate">
+                        SeedListeStock
+                    </h1>
+                    <span id="statusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-tealbrand-soft text-tealbrand-dark whitespace-nowrap">
+                        <span id="statusDot" class="w-2 h-2 rounded-full bg-tealbrand"></span>
+                        <span id="statusText">Lädt…</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Rechts: Neu laden + Einstellungen -->
+            <div class="flex items-center gap-2 shrink-0">
+                <button id="reloadBtn" type="button"
+                    class="inline-flex items-center justify-center gap-2 h-10 px-3.5 rounded-xl bg-white hover:bg-tealbrand-soft border border-surface-border hover:border-tealbrand/40 text-sm font-semibold text-ink-primary hover:text-tealbrand-dark transition active:scale-95"
+                    title="Aktuelle Daten aus Google Sheets laden">
+                    <svg id="reloadIcon" class="w-4 h-4 text-tealbrand transition-transform duration-500" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    <span class="hidden sm:inline">Neu laden</span>
+                </button>
+
+                <button id="settingsBtn" type="button"
+                    class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white hover:bg-surface-bg border border-surface-border text-ink-secondary hover:text-ink-primary transition active:scale-95"
+                    aria-label="Einstellungen"
+                    title="CSV-Quelle einstellen">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== OFFLINE / DEMO BANNER ==================== -->
+    <div id="demoBanner" class="hidden bg-amber-50 border-b border-amber-200 text-amber-900">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-3 text-xs sm:text-sm">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 shrink-0 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86l-7.4 12.82A2 2 0 004.62 19.5h14.76a2 2 0 001.73-2.82l-7.4-12.82a2 2 0 00-3.42 0z"/>
+                </svg>
+                <span>Live-Abruf fehlgeschlagen – es werden lokale Beispieldaten angezeigt.</span>
+            </div>
+            <button id="retryFetchBtn" type="button" class="font-semibold text-amber-800 underline hover:text-amber-950 shrink-0">
+                Erneut versuchen
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== TOP FILTERLEISTE (ALLE FILTER DIREKT SICHTBAR) ==================== -->
+    <section aria-label="Filter und Sortierung" class="bg-white border-b border-surface-border">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-4 space-y-3">
+
+            <!-- ZEILE 1: Suche, Sortierung, Nur auf Lager, Zurücksetzen -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <!-- Suchfeld -->
+                <div class="relative flex-1 min-w-[220px]">
+                    <svg class="w-4 h-4 text-ink-secondary absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input id="searchInput" type="text" placeholder="Suche nach Strainname, Marke oder Geschmack…"
+                        class="w-full h-11 pl-10 pr-10 rounded-xl bg-surface-bg border border-surface-border focus:bg-white focus:border-tealbrand focus:ring-2 focus:ring-tealbrand/15 text-sm text-ink-primary placeholder-ink-secondary/70 outline-none transition">
+                    <button id="clearSearchBtn" type="button"
+                        class="hidden absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-ink-secondary hover:text-ink-primary"
+                        aria-label="Suche leeren">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Sortierung -->
+                <select id="sortSelect" aria-label="Sortierung"
+                    class="clean-select h-11 pl-3.5 pr-9 rounded-xl bg-surface-bg hover:bg-white focus:bg-white border border-surface-border focus:border-tealbrand text-sm font-medium text-ink-primary outline-none cursor-pointer transition shrink-0">
+                    <option value="default">Sortierung: Standard</option>
+                    <option value="price-asc">Preis: günstigste zuerst</option>
+                    <option value="price-desc">Preis: höchste zuerst</option>
+                    <option value="thc-desc">THC: höchste zuerst</option>
+                    <option value="stock-desc">Bestand: höchste zuerst</option>
+                    <option value="name-asc">Name: A–Z</option>
+                </select>
+
+                <!-- Nur auf Lager Toggle -->
+                <button id="inStockBtn" type="button" aria-pressed="false"
+                    class="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-surface-bg hover:bg-white border border-surface-border text-sm font-semibold text-ink-primary transition active:scale-95 shrink-0">
+                    <span id="inStockDot" class="w-2.5 h-2.5 rounded-full bg-slate-400 transition-colors"></span>
+                    <span>Nur auf Lager</span>
+                </button>
+
+                <!-- Zurücksetzen Button -->
+                <button id="resetBtn" type="button"
+                    class="hidden inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-tealbrand-soft hover:bg-tealbrand text-tealbrand-dark hover:text-white border border-tealbrand/30 text-sm font-semibold transition active:scale-95 shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    <span>Zurücksetzen</span>
+                    <span id="activeFilterCount" class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-tealbrand text-white text-xs font-bold">0</span>
+                </button>
+            </div>
+
+            <!-- ZEILE 2: Einzelne Direktfilter (Typ, Genetik, Marke, THC, Zeitraum, Preis) -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <!-- Typ: Alle / AUTO / FEM -->
+                <div class="inline-flex items-center h-11 p-1 rounded-xl bg-surface-bg border border-surface-border shrink-0" role="group" aria-label="Typ filtern">
+                    <button type="button" data-typ="alle"
+                        class="typ-btn h-9 px-3.5 rounded-lg text-xs sm:text-sm font-semibold transition active:scale-95 bg-tealbrand text-white">
+                        Alle
+                    </button>
+                    <button type="button" data-typ="AUTO"
+                        class="typ-btn h-9 px-3.5 rounded-lg text-xs sm:text-sm font-semibold transition active:scale-95 text-ink-secondary hover:text-ink-primary">
+                        AUTO
+                    </button>
+                    <button type="button" data-typ="FEM"
+                        class="typ-btn h-9 px-3.5 rounded-lg text-xs sm:text-sm font-semibold transition active:scale-95 text-ink-secondary hover:text-ink-primary">
+                        FEM
+                    </button>
+                </div>
+
+                <!-- Genetik: Alle / Indica / Sativa / 50/50 -->
+                <div class="inline-flex items-center h-11 p-1 rounded-xl bg-surface-bg border border-surface-border shrink-0" role="group" aria-label="Genetik filtern">
+                    <button type="button" data-genetik="alle"
+                        class="genetik-btn h-9 px-3 rounded-lg text-xs sm:text-sm font-semibold transition active:scale-95 bg-tealbrand text-white">
+                        Alle
+                    </button>
+                    <button type="button" data-genetik="indica"
+                        class="genetik-btn h-9 px-3 rounded-lg text-xs sm:text-sm font-semibold transition active:scale-95 text-ink-secondary hover:text-ink-primary">
+                        Indica
+                    </button>
+                    <button type="button" data-genetik="sativa"
+                        class="genetik-btn h-9 px-3 rounded-lg text-xs sm:text-sm font-semibold transition active:scale-95 text-ink-secondary hover:text-ink-primary">
+                        Sativa
+                    </button>
+                    <button type="button" data-genetik="50/50"
+                        class="genetik-btn h-9 px-3 rounded-lg text-xs sm:text-sm font-semibold transition active:scale-95 text-ink-secondary hover:text-ink-primary">
+                        50/50
+                    </button>
+                </div>
+
+                <!-- Marke Dropdown -->
+                <select id="brandSelect" aria-label="Marke filtern"
+                    class="clean-select h-11 pl-3.5 pr-9 rounded-xl bg-surface-bg hover:bg-white focus:bg-white border border-surface-border focus:border-tealbrand text-sm font-medium text-ink-primary outline-none cursor-pointer transition min-w-[140px]">
+                    <option value="">Alle Marken</option>
+                </select>
+
+                <!-- THC ab % -->
+                <label class="inline-flex items-center gap-2 h-11 px-3 rounded-xl bg-surface-bg focus-within:bg-white border border-surface-border focus-within:border-tealbrand transition">
+                    <span class="text-xs font-semibold text-ink-secondary whitespace-nowrap">THC ab</span>
+                    <input id="thcMinInput" type="number" min="0" max="100" step="0.5" placeholder="%"
+                        class="w-14 bg-transparent text-sm font-semibold text-ink-primary placeholder-ink-secondary/60 outline-none text-right">
+                    <span class="text-xs text-ink-secondary">%</span>
+                </label>
+
+                <!-- Zeitraum bis (Tage) -->
+                <label class="inline-flex items-center gap-2 h-11 px-3 rounded-xl bg-surface-bg focus-within:bg-white border border-surface-border focus-within:border-tealbrand transition">
+                    <span class="text-xs font-semibold text-ink-secondary whitespace-nowrap">Zeitraum bis</span>
+                    <input id="daysMaxInput" type="number" min="0" max="365" step="1" placeholder="Tage"
+                        class="w-14 bg-transparent text-sm font-semibold text-ink-primary placeholder-ink-secondary/60 outline-none text-right">
+                    <span class="text-xs text-ink-secondary">Tage</span>
+                </label>
+
+                <!-- Preis max (€) -->
+                <label class="inline-flex items-center gap-2 h-11 px-3 rounded-xl bg-surface-bg focus-within:bg-white border border-surface-border focus-within:border-tealbrand transition">
+                    <span class="text-xs font-semibold text-ink-secondary whitespace-nowrap">Preis max</span>
+                    <input id="priceMaxInput" type="number" min="0" step="0.5" placeholder="€"
+                        class="w-14 bg-transparent text-sm font-semibold text-ink-primary placeholder-ink-secondary/60 outline-none text-right">
+                    <span class="text-xs text-ink-secondary">€</span>
+                </label>
+            </div>
+
+            <!-- ZEILE 3: Eigener Geschmack-Tag-Filter (alle vorhandenen Tags aus Geschmack 1–3) -->
+            <div id="flavorFilterRow" class="hidden pt-2 border-t border-surface-border/70 flex flex-wrap items-center gap-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-ink-secondary mr-1 py-1">
+                    Geschmack:
+                </span>
+                <div id="flavorTagsContainer" class="flex flex-wrap items-center gap-1.5">
+                    <!-- Dynamisch befüllt -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== HAUPTBEREICH: SORTEN-GRID ==================== -->
+    <main class="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6">
+        <!-- Ergebnis-Info -->
+        <div class="flex items-center justify-between gap-2 mb-4">
+            <p id="resultsSummary" class="text-sm text-ink-secondary font-medium">
+                Lade Sorten…
+            </p>
+            <p id="andLogicHint" class="hidden text-xs text-tealbrand-dark font-medium bg-tealbrand-soft px-2.5 py-1 rounded-full">
+                Alle aktiven Filter werden mit UND kombiniert
+            </p>
+        </div>
+
+        <!-- Karten-Grid -->
+        <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+            <!-- Dynamisch befüllt -->
+        </div>
+
+        <!-- Leerzustand bei 0 Treffern -->
+        <div id="emptyState" class="hidden max-w-md mx-auto text-center py-16 px-6 bg-white rounded-2xl border border-surface-border">
+            <div class="w-12 h-12 rounded-2xl bg-tealbrand-soft text-tealbrand flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+            </div>
+            <h2 class="text-base font-bold text-ink-primary mb-1">Keine passende Sorte gefunden</h2>
+            <p class="text-sm text-ink-secondary mb-5">
+                Für die gewählte Kombination aus Filtern gibt es aktuell keinen Treffer in der Liste.
+            </p>
+            <button id="emptyResetBtn" type="button"
+                class="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-tealbrand hover:bg-tealbrand-dark text-white text-sm font-semibold transition active:scale-95">
+                Alle Filter zurücksetzen
+            </button>
+        </div>
+    </main>
+
+    <!-- ==================== DETAIL-MODAL ==================== -->
+    <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-primary/45 backdrop-blur-xs" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+        <div class="bg-white rounded-2xl border border-surface-border shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-fade-up">
+            <div id="detailModalContent"></div>
+        </div>
+    </div>
+
+    <!-- ==================== EINSTELLUNGEN-MODAL ==================== -->
+    <div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-primary/45 backdrop-blur-xs" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+        <div class="bg-white rounded-2xl border border-surface-border shadow-2xl w-full max-w-lg p-6 animate-fade-up">
+            <div class="flex items-center justify-between mb-4">
+                <h2 id="settingsModalTitle" class="text-lg font-bold text-ink-primary">Datenquelle (Google Sheets CSV)</h2>
+                <button id="closeSettingsBtn" type="button"
+                    class="w-9 h-9 rounded-xl hover:bg-surface-bg text-ink-secondary hover:text-ink-primary flex items-center justify-center transition"
+                    aria-label="Schließen">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <p class="text-sm text-ink-secondary mb-4">
+                Hier ist deine veröffentlichte Google-Sheets-CSV-Adresse hinterlegt. Du kannst sie bei Bedarf anpassen oder auf die Standard-URL zurücksetzen.
+            </p>
+
+            <label for="csvUrlInput" class="block text-xs font-semibold uppercase tracking-wider text-ink-secondary mb-1.5">
+                CSV-URL
+            </label>
+            <input id="csvUrlInput" type="url"
+                class="w-full h-11 px-3.5 rounded-xl bg-surface-bg border border-surface-border focus:bg-white focus:border-tealbrand text-sm text-ink-primary outline-none mb-2">
+
+            <p id="settingsFeedback" class="hidden text-xs font-medium text-tealbrand-dark mb-3"></p>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-surface-border mt-4">
+                <button id="resetUrlBtn" type="button"
+                    class="h-10 px-4 rounded-xl bg-surface-bg hover:bg-surface-border/60 text-sm font-semibold text-ink-secondary hover:text-ink-primary transition">
+                    Standard wiederherstellen
+                </button>
+                <div class="flex items-center gap-2">
+                    <button id="cancelSettingsBtn" type="button"
+                        class="h-10 px-4 rounded-xl bg-white hover:bg-surface-bg border border-surface-border text-sm font-semibold text-ink-primary transition">
+                        Abbrechen
+                    </button>
+                    <button id="saveSettingsBtn" type="button"
+                        class="h-10 px-5 rounded-xl bg-tealbrand hover:bg-tealbrand-dark text-white text-sm font-semibold transition active:scale-95">
+                        Speichern &amp; laden
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        (function () {
+            'use strict';
+
+            // ------------------------------------------------------------
+            // 1. KONFIGURATION & FALLBACK-DATEN
+            // ------------------------------------------------------------
+            const DEFAULT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR-CFrZC-h66xhN85F3ndPWKQPDpi5-AjbXN9_DqtUwjlVJ16Lgqk876YmeHxa0H6X7FwzFDMPdtG9_/pub?output=csv';
+            const STORAGE_KEY_URL = 'seedlistestock_csv_url_v1';
+
+            // Exakte Beispieldaten entsprechend der aktuellen Tabelle (nur bei Offline-/Fetch-Fehler genutzt)
+            const FALLBACK_ROWS = [
+                {
+                    Marke: 'barneysfarm',
+                    Strainname: 'Mimosa Evo x Orange Punch x BF Super Auto #1',
+                    Typ: 'AUTO',
+                    'Indica in %': '60',
+                    'Sativa in %': '40',
+                    THC: '24',
+                    CBD: '0,4',
+                    Zeitraum: '65-70',
+                    Preis: '39',
+                    Stock: '2',
+                    'Geschmack 1': 'Zitrusartig',
+                    'Geschmack 2': 'Bonbon',
+                    'Geschmack 3': '',
+                    Bildlink: ''
+                },
+                {
+                    Marke: 'barneysfarm',
+                    Strainname: 'Strawberry Lemonade Strain',
+                    Typ: 'FEM',
+                    'Indica in %': '60',
+                    'Sativa in %': '40',
+                    THC: '24',
+                    CBD: '0,9',
+                    Zeitraum: '60-70',
+                    Preis: '39',
+                    Stock: '3',
+                    'Geschmack 1': 'süße Zitrone',
+                    'Geschmack 2': 'erdige Erdbeere',
+                    'Geschmack 3': 'erfrischend',
+                    Bildlink: ''
+                }
+            ];
+
+            // ------------------------------------------------------------
+            // 2. ZUSTAND (STATE)
+            // ------------------------------------------------------------
+            const state = {
+                strains: [],
+                allFlavors: [], // [{ key: lowercase, label: Original }]
+                isDemo: false,
+                filters: {
+                    search: '',
+                    typ: 'alle',        // 'alle' | 'AUTO' | 'FEM'
+                    genetik: 'alle',    // 'alle' | 'indica' | 'sativa' | '50/50'
+                    brand: '',          // '' oder exakter Markenname (lowercase)
+                    thcMin: null,       // number | null
+                    daysMax: null,      // number | null
+                    priceMax: null,     // number | null
+                    inStockOnly: false, // boolean
+                    flavors: new Set(), // Set<lowercase flavor key> (UND-Verknüpfung)
+                    sort: 'default'
+                }
+            };
+
+            // ------------------------------------------------------------
+            // 3. DOM-REFERENZEN
+            // ------------------------------------------------------------
+            const el = {
+                statusDot: document.getElementById('statusDot'),
+                statusText: document.getElementById('statusText'),
+                demoBanner: document.getElementById('demoBanner'),
+                retryFetchBtn: document.getElementById('retryFetchBtn'),
+                reloadBtn: document.getElementById('reloadBtn'),
+                reloadIcon: document.getElementById('reloadIcon'),
+                settingsBtn: document.getElementById('settingsBtn'),
+
+                searchInput: document.getElementById('searchInput'),
+                clearSearchBtn: document.getElementById('clearSearchBtn'),
+                sortSelect: document.getElementById('sortSelect'),
+                inStockBtn: document.getElementById('inStockBtn'),
+                inStockDot: document.getElementById('inStockDot'),
+                resetBtn: document.getElementById('resetBtn'),
+                activeFilterCount: document.getElementById('activeFilterCount'),
+
+                typBtns: document.querySelectorAll('.typ-btn'),
+                genetikBtns: document.querySelectorAll('.genetik-btn'),
+                brandSelect: document.getElementById('brandSelect'),
+                thcMinInput: document.getElementById('thcMinInput'),
+                daysMaxInput: document.getElementById('daysMaxInput'),
+                priceMaxInput: document.getElementById('priceMaxInput'),
+
+                flavorFilterRow: document.getElementById('flavorFilterRow'),
+                flavorTagsContainer: document.getElementById('flavorTagsContainer'),
+
+                resultsSummary: document.getElementById('resultsSummary'),
+                andLogicHint: document.getElementById('andLogicHint'),
+                cardsGrid: document.getElementById('cardsGrid'),
+                emptyState: document.getElementById('emptyState'),
+                emptyResetBtn: document.getElementById('emptyResetBtn'),
+
+                detailModal: document.getElementById('detailModal'),
+                detailModalContent: document.getElementById('detailModalContent'),
+
+                settingsModal: document.getElementById('settingsModal'),
+                csvUrlInput: document.getElementById('csvUrlInput'),
+                settingsFeedback: document.getElementById('settingsFeedback'),
+                closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+                cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
+                resetUrlBtn: document.getElementById('resetUrlBtn'),
+                saveSettingsBtn: document.getElementById('saveSettingsBtn')
+            };
+
+            // ------------------------------------------------------------
+            // 4. HILFSFUNKTIONEN (CSV-PARSER, ZAHLEN, ESCAPING)
+            // ------------------------------------------------------------
+
+            /**
+             * Sicherer HTML-Escape gegen XSS.
+             */
+            function escapeHtml(str) {
+                if (str === null || str === undefined) return '';
+                return String(str)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            /**
+             * Reiner JS RFC-4180 CSV-Parser.
+             * Verarbeitet Anführungszeichen, Zeilenumbrüche in Zellen, Kommas in Feldern und BOM.
+             */
+            function parseCSV(text) {
+                const cleanText = text.replace(/^\uFEFF/, '');
+                const rows = [];
+                let currentRow = [];
+                let currentField = '';
+                let inQuotes = false;
+
+                for (let i = 0; i < cleanText.length; i++) {
+                    const char = cleanText[i];
+                    const nextChar = cleanText[i + 1];
+
+                    if (inQuotes) {
+                        if (char === '"') {
+                            if (nextChar === '"') {
+                                currentField += '"';
+                                i++;
+                            } else {
+                                inQuotes = false;
+                            }
+                        } else {
+                            currentField += char;
+                        }
+                    } else {
+                        if (char === '"') {
+                            inQuotes = true;
+                        } else if (char === ',') {
+                            currentRow.push(currentField);
+                            currentField = '';
+                        } else if (char === '\r' && nextChar === '\n') {
+                            currentRow.push(currentField);
+                            rows.push(currentRow);
+                            currentRow = [];
+                            currentField = '';
+                            i++;
+                        } else if (char === '\n' || char === '\r') {
+                            currentRow.push(currentField);
+                            rows.push(currentRow);
+                            currentRow = [];
+                            currentField = '';
+                        } else {
+                            currentField += char;
+                        }
+                    }
+                }
+
+                // Letztes Feld / letzte Zeile hinzufügen
+                if (currentField.length > 0 || currentRow.length > 0) {
+                    currentRow.push(currentField);
+                    rows.push(currentRow);
+                }
+
+                return rows;
+            }
+
+            /**
+             * Parst deutsche/internationale Zahlenwerte (z. B. "0,4", "39,50", "24%").
+             * Gibt null zurück, wenn leer oder keine gültige Zahl.
+             */
+            function parseGermanNumber(val) {
+                if (val === null || val === undefined) return null;
+                const cleaned = String(val)
+                    .trim()
+                    .replace(/\s+/g, '')
+                    .replace(/[%€]/g, '')
+                    .replace(',', '.');
+                if (cleaned === '') return null;
+                const num = Number(cleaned);
+                return Number.isFinite(num) ? num : null;
+            }
+
+            /**
+             * Formatiert eine Zahl sauber für die deutsche Anzeige (ohne überflüssige Nullen).
+             */
+            function formatNumberDE(num, maxDecimals = 2) {
+                if (num === null || num === undefined || !Number.isFinite(num)) return '';
+                return new Intl.NumberFormat('de-DE', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: maxDecimals
+                }).format(num);
+            }
+
+            /**
+             * Formatiert Preise in Euro (z. B. "39 €" oder "39,50 €").
+             */
+            function formatPriceDE(num) {
+                if (num === null || num === undefined || !Number.isFinite(num)) return '';
+                const hasDecimals = Math.round(num * 100) % 100 !== 0;
+                return new Intl.NumberFormat('de-DE', {
+                    minimumFractionDigits: hasDecimals ? 2 : 0,
+                    maximumFractionDigits: 2
+                }).format(num) + ' €';
+            }
+
+            /**
+             * Normalisiert Typ flexibel: AUTO / FEM.
+             */
+            function normalizeTyp(raw) {
+                const s = String(raw || '').trim().toLowerCase();
+                if (!s) return '';
+                if (s.includes('auto')) return 'AUTO';
+                if (s.includes('fem') || s.includes('photo')) return 'FEM';
+                return String(raw).trim().toUpperCase();
+            }
+
+            /**
+             * Parst Zeitraum (z. B. "65-70", "60 - 70 Tage", "65") in { raw, min, max }.
+             */
+            function parseZeitraum(raw) {
+                const trimmed = String(raw || '').trim();
+                if (!trimmed) return { raw: '', min: null, max: null };
+                const matches = trimmed.match(/\d+(?:[.,]\d+)?/g);
+                if (!matches || matches.length === 0) {
+                    return { raw: trimmed, min: null, max: null };
+                }
+                const nums = matches
+                    .map(m => Number(m.replace(',', '.')))
+                    .filter(n => Number.isFinite(n));
+                if (nums.length === 0) return { raw: trimmed, min: null, max: null };
+                return {
+                    raw: trimmed,
+                    min: Math.min(...nums),
+                    max: Math.max(...nums)
+                };
+            }
+
+            /**
+             * Liest einen Spaltenwert anhand flexibler Header-Namen (case-insensitive).
+             */
+            function getField(rowObj, possibleKeys) {
+                for (const key of possibleKeys) {
+                    const lower = key.toLowerCase();
+                    if (Object.prototype.hasOwnProperty.call(rowObj, lower)) {
+                        return rowObj[lower];
+                    }
+                }
+                return '';
+            }
+
+            /**
+             * Wandelt ein Roh-Objekt (aus CSV oder Fallback) in ein sauberes Strain-Objekt um.
+             */
+            function normalizeStrain(rawObj, index) {
+                // Alle Schlüssel klein & getrimmt vorhalten
+                const lowerMap = {};
+                Object.keys(rawObj).forEach(k => {
+                    lowerMap[String(k).trim().toLowerCase()] = rawObj[k];
+                });
+
+                const strainname = String(getField(lowerMap, ['strainname', 'name', 'sorte']) || '').trim();
+                if (!strainname) return null; // Leere Zeilen oder Zeilen ohne Strainname überspringen
+
+                const marke = String(getField(lowerMap, ['marke', 'brand', 'breeder']) || '').trim();
+                const typ = normalizeTyp(getField(lowerMap, ['typ', 'type']));
+                const indica = parseGermanNumber(getField(lowerMap, ['indica in %', 'indica %', 'indica']));
+                const sativa = parseGermanNumber(getField(lowerMap, ['sativa in %', 'sativa %', 'sativa']));
+                const thc = parseGermanNumber(getField(lowerMap, ['thc', 'thc %', 'thc in %']));
+                const cbd = parseGermanNumber(getField(lowerMap, ['cbd', 'cbd %', 'cbd in %']));
+                const zeitraum = parseZeitraum(getField(lowerMap, ['zeitraum', 'blütezeit', 'tage']));
+                const preis = parseGermanNumber(getField(lowerMap, ['preis', 'price']));
+                const stock = parseGermanNumber(getField(lowerMap, ['stock', 'bestand', 'lager']));
+
+                // Geschmack 1, 2, 3 sammeln – leere Werte komplett ignorieren
+                const rawFlavors = [
+                    getField(lowerMap, ['geschmack 1', 'geschmack1']),
+                    getField(lowerMap, ['geschmack 2', 'geschmack2']),
+                    getField(lowerMap, ['geschmack 3', 'geschmack3'])
+                ];
+                const flavors = [];
+                const flavorKeys = new Set();
+                rawFlavors.forEach(f => {
+                    const cleaned = String(f || '').replace(/\s+/g, ' ').trim();
+                    if (cleaned) {
+                        const key = cleaned.toLowerCase();
+                        if (!flavorKeys.has(key)) {
+                            flavorKeys.add(key);
+                            flavors.push(cleaned);
+                        }
+                    }
+                });
+
+                const bildlinkRaw = String(getField(lowerMap, ['bildlink', 'bild_url', 'bild', 'image']) || '').trim();
+                const bildlink = /^https?:\/\//i.test(bildlinkRaw) ? bildlinkRaw : '';
+
+                // Genetik-Dominanz bestimmen (nur wenn Werte vorhanden)
+                let genetik = '';
+                if (indica !== null || sativa !== null) {
+                    const indVal = indica !== null ? indica : 0;
+                    const satVal = sativa !== null ? sativa : 0;
+                    if (indVal > satVal) genetik = 'indica';
+                    else if (satVal > indVal) genetik = 'sativa';
+                    else if (indVal === satVal && indVal > 0) genetik = '50/50';
+                }
+
+                return {
+                    id: index,
+                    marke,
+                    strainname,
+                    typ,
+                    indica,
+                    sativa,
+                    genetik,
+                    thc,
+                    cbd,
+                    zeitraumRaw: zeitraum.raw,
+                    zeitraumMin: zeitraum.min,
+                    zeitraumMax: zeitraum.max,
+                    preis,
+                    stock,
+                    flavors,
+                    flavorKeys,
+                    bildlink
+                };
+            }
+
+            /**
+             * Konvertiert geparste CSV-Zeilen in ein Array von Strain-Objekten.
+             */
+            function csvRowsToStrains(matrix) {
+                if (!matrix || matrix.length < 2) return [];
+                const headers = matrix[0].map(h => String(h || '').trim());
+                const strains = [];
+
+                for (let r = 1; r < matrix.length; r++) {
+                    const row = matrix[r];
+                    // Komplett leere Zeilen überspringen
+                    const hasAnyValue = row.some(cell => String(cell || '').trim() !== '');
+                    if (!hasAnyValue) continue;
+
+                    const obj = {};
+                    for (let c = 0; c < headers.length; c++) {
+                        if (headers[c]) {
+                            obj[headers[c]] = row[c] !== undefined ? row[c] : '';
+                        }
+                    }
+
+                    const normalized = normalizeStrain(obj, r);
+                    if (normalized) strains.push(normalized);
+                }
+
+                return strains;
+            }
+
+            // ------------------------------------------------------------
+            // 5. DATEN LADEN (LIVE GOOGLE SHEETS + FALLBACK)
+            // ------------------------------------------------------------
+            function getActiveCsvUrl() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY_URL);
+                    return saved && saved.trim() ? saved.trim() : DEFAULT_CSV_URL;
+                } catch (e) {
+                    return DEFAULT_CSV_URL;
+                }
+            }
+
+            async function loadData(forceFresh = false) {
+                const url = getActiveCsvUrl();
+                setLoadingUI(true);
+
+                try {
+                    // Cache-Buster anhängen, damit Google Sheets Änderungen sofort greifen
+                    const separator = url.includes('?') ? '&' : '?';
+                    const fetchUrl = `${url}${separator}_t=${Date.now()}`;
+
+                    const response = await fetch(fetchUrl, {
+                        method: 'GET',
+                        cache: forceFresh ? 'no-store' : 'no-cache'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const csvText = await response.text();
+                    const matrix = parseCSV(csvText);
+                    const parsedStrains = csvRowsToStrains(matrix);
+
+                    if (parsedStrains.length === 0) {
+                        throw new Error('Keine gültigen Einträge in der CSV gefunden');
+                    }
+
+                    state.strains = parsedStrains;
+                    state.isDemo = false;
+                    el.demoBanner.classList.add('hidden');
+                } catch (err) {
+                    console.warn('Live-CSV konnte nicht geladen werden, nutze Fallback:', err);
+                    state.strains = FALLBACK_ROWS
+                        .map((row, idx) => normalizeStrain(row, idx))
+                        .filter(Boolean);
+                    state.isDemo = true;
+                    el.demoBanner.classList.remove('hidden');
+                } finally {
+                    setLoadingUI(false);
+                    populateDynamicFilters();
+                    render();
+                }
+            }
+
+            function setLoadingUI(isLoading) {
+                if (isLoading) {
+                    el.reloadIcon.classList.add('animate-spin');
+                    el.statusDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+                    el.statusText.textContent = 'Lädt…';
+                } else {
+                    el.reloadIcon.classList.remove('animate-spin');
+                }
+            }
+
+            // ------------------------------------------------------------
+            // 6. DYNAMISCHE FILTER BEFÜLLEN (MARKEN & GESCHMÄCKER)
+            // ------------------------------------------------------------
+            function populateDynamicFilters() {
+                // 1) Marken-Dropdown
+                const brandMap = new Map();
+                state.strains.forEach(s => {
+                    if (s.marke) {
+                        const key = s.marke.toLowerCase();
+                        if (!brandMap.has(key)) brandMap.set(key, s.marke);
+                    }
+                });
+                const sortedBrands = Array.from(brandMap.entries())
+                    .sort((a, b) => a[1].localeCompare(b[1], 'de', { sensitivity: 'base' }));
+
+                const prevBrand = state.filters.brand;
+                el.brandSelect.innerHTML = '<option value="">Alle Marken</option>';
+                sortedBrands.forEach(([key, label]) => {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = label;
+                    el.brandSelect.appendChild(opt);
+                });
+                // Auswahl erhalten, falls Marke noch existiert
+                if (prevBrand && brandMap.has(prevBrand)) {
+                    el.brandSelect.value = prevBrand;
+                } else {
+                    state.filters.brand = '';
+                    el.brandSelect.value = '';
+                }
+
+                // 2) Alle einzigartigen Geschmäcker aus Geschmack 1, 2 & 3 sammeln
+                const flavorMap = new Map();
+                state.strains.forEach(s => {
+                    s.flavors.forEach(f => {
+                        const key = f.toLowerCase();
+                        if (!flavorMap.has(key)) {
+                            flavorMap.set(key, f);
+                        }
+                    });
+                });
+
+                state.allFlavors = Array.from(flavorMap.entries())
+                    .map(([key, label]) => ({ key, label }))
+                    .sort((a, b) => a.label.localeCompare(b.label, 'de', { sensitivity: 'base' }));
+
+                // Ungültige aktive Flavor-Keys entfernen
+                for (const activeKey of Array.from(state.filters.flavors)) {
+                    if (!flavorMap.has(activeKey)) {
+                        state.filters.flavors.delete(activeKey);
+                    }
+                }
+
+                renderFlavorTagFilter();
+            }
+
+            function renderFlavorTagFilter() {
+                if (state.allFlavors.length === 0) {
+                    el.flavorFilterRow.classList.add('hidden');
+                    return;
+                }
+
+                el.flavorFilterRow.classList.remove('hidden');
+                el.flavorTagsContainer.innerHTML = state.allFlavors.map(({ key, label }) => {
+                    const isActive = state.filters.flavors.has(key);
+                    const classes = isActive
+                        ? 'bg-tealbrand text-white border-tealbrand shadow-xs'
+                        : 'bg-surface-bg text-ink-primary border-surface-border hover:border-tealbrand/50 hover:bg-tealbrand-soft/60';
+                    return `
+                        <button type="button"
+                            data-flavor="${escapeHtml(key)}"
+                            aria-pressed="${isActive ? 'true' : 'false'}"
+                            class="flavor-pill inline-flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-medium transition active:scale-95 ${classes}">
+                            <span>${escapeHtml(label)}</span>
+                            ${isActive ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' : ''}
+                        </button>
+                    `;
+                }).join('');
+            }
+
+            // ------------------------------------------------------------
+            // 7. STRIKTE UND-FILTERLOGIK & SORTIERUNG
+            // ------------------------------------------------------------
+            function getActiveFilterCount() {
+                const f = state.filters;
+                let count = 0;
+                if (f.search.trim() !== '') count++;
+                if (f.typ !== 'alle') count++;
+                if (f.genetik !== 'alle') count++;
+                if (f.brand !== '') count++;
+                if (f.thcMin !== null) count++;
+                if (f.daysMax !== null) count++;
+                if (f.priceMax !== null) count++;
+                if (f.inStockOnly) count++;
+                count += f.flavors.size;
+                return count;
+            }
+
+            function getFilteredAndSortedStrains() {
+                const f = state.filters;
+                const query = f.search.trim().toLowerCase();
+                const selectedFlavors = Array.from(f.flavors);
+
+                const filtered = state.strains.filter(strain => {
+                    // 1. Textsuche (Strainname, Marke, alle 3 Geschmäcker)
+                    if (query) {
+                        const haystack = [
+                            strain.strainname,
+                            strain.marke,
+                            ...strain.flavors
+                        ].join(' ').toLowerCase();
+                        if (!haystack.includes(query)) return false;
+                    }
+
+                    // 2. Typ (AUTO / FEM)
+                    if (f.typ !== 'alle') {
+                        if (strain.typ !== f.typ) return false;
+                    }
+
+                    // 3. Genetik (indica / sativa / 50/50)
+                    if (f.genetik !== 'alle') {
+                        if (strain.genetik !== f.genetik) return false;
+                    }
+
+                    // 4. Marke
+                    if (f.brand !== '') {
+                        if (strain.marke.toLowerCase() !== f.brand) return false;
+                    }
+
+                    // 5. THC ab % (bei aktivem Filter werden leere THC-Felder ausgeschlossen)
+                    if (f.thcMin !== null) {
+                        if (strain.thc === null || strain.thc < f.thcMin) return false;
+                    }
+
+                    // 6. Zeitraum bis Tage (vergleicht gegen parsed minDays; leere Felder ausgeschlossen)
+                    if (f.daysMax !== null) {
+                        if (strain.zeitraumMin === null || strain.zeitraumMin > f.daysMax) return false;
+                    }
+
+                    // 7. Preis max € (leere Felder ausgeschlossen)
+                    if (f.priceMax !== null) {
+                        if (strain.preis === null || strain.preis > f.priceMax) return false;
+                    }
+
+                    // 8. Nur auf Lager (Stock > 0)
+                    if (f.inStockOnly) {
+                        if (strain.stock === null || strain.stock <= 0) return false;
+                    }
+
+                    // 9. Geschmack-Tags: STRIKTE UND-Verknüpfung (alle gewählten Tags müssen vorhanden sein)
+                    if (selectedFlavors.length > 0) {
+                        const hasAllFlavors = selectedFlavors.every(reqKey => strain.flavorKeys.has(reqKey));
+                        if (!hasAllFlavors) return false;
+                    }
+
+                    return true;
+                });
+
+                // Sortierung anwenden (leere Werte jeweils nach hinten)
+                const sorted = [...filtered];
+                switch (f.sort) {
+                    case 'price-asc':
+                        sorted.sort((a, b) => (a.preis ?? Infinity) - (b.preis ?? Infinity));
+                        break;
+                    case 'price-desc':
+                        sorted.sort((a, b) => (b.preis ?? -Infinity) - (a.preis ?? -Infinity));
+                        break;
+                    case 'thc-desc':
+                        sorted.sort((a, b) => (b.thc ?? -Infinity) - (a.thc ?? -Infinity));
+                        break;
+                    case 'stock-desc':
+                        sorted.sort((a, b) => (b.stock ?? -Infinity) - (a.stock ?? -Infinity));
+                        break;
+                    case 'name-asc':
+                        sorted.sort((a, b) => a.strainname.localeCompare(b.strainname, 'de', { sensitivity: 'base' }));
+                        break;
+                    default:
+                        sorted.sort((a, b) => a.id - b.id);
+                        break;
+                }
+
+                return sorted;
+            }
+
+            // ------------------------------------------------------------
+            // 8. RENDERING (KARTEN, STATUS, MODALS)
+            // ------------------------------------------------------------
+            function renderTypBadge(typ) {
+                if (!typ) return '';
+                const isAuto = typ === 'AUTO';
+                const cls = isAuto
+                    ? 'bg-tealbrand text-white'
+                    : 'bg-ink-primary text-white';
+                return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase ${cls}">${escapeHtml(typ)}</span>`;
+            }
+
+            function renderStockBadge(stock) {
+                if (stock === null) return '';
+                if (stock > 0) {
+                    return `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">${formatNumberDE(stock, 0)} auf Lager</span>`;
+                }
+                return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/80">Ausverkauft</span>`;
+            }
+
+            function renderGeneticsBar(strain) {
+                if (strain.indica === null && strain.sativa === null) return '';
+                const ind = strain.indica !== null ? strain.indica : 0;
+                const sat = strain.sativa !== null ? strain.sativa : 0;
+                const total = ind + sat;
+                const indPct = total > 0 ? Math.round((ind / total) * 100) : 0;
+                const satPct = total > 0 ? 100 - indPct : 0;
+
+                const labels = [];
+                if (strain.indica !== null) labels.push(`<span>Indica <strong class="text-ink-primary">${formatNumberDE(strain.indica)}%</strong></span>`);
+                if (strain.sativa !== null) labels.push(`<span>Sativa <strong class="text-ink-primary">${formatNumberDE(strain.sativa)}%</strong></span>`);
+
+                return `
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between text-xs text-ink-secondary">
+                            ${labels.join('')}
+                        </div>
+                        ${total > 0 ? `
+                        <div class="w-full h-1.5 rounded-full bg-surface-border overflow-hidden flex">
+                            <div class="bg-tealbrand h-full" style="width: ${indPct}%"></div>
+                            <div class="bg-tealbrand/35 h-full" style="width: ${satPct}%"></div>
+                        </div>` : ''}
+                    </div>
+                `;
+            }
+
+            function renderMetricPills(strain) {
+                const pills = [];
+                if (strain.thc !== null) {
+                    pills.push(`<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-tealbrand-soft/75 text-tealbrand-dark text-xs font-semibold">THC ${formatNumberDE(strain.thc)}%</span>`);
+                }
+                if (strain.cbd !== null) {
+                    pills.push(`<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-bg text-ink-secondary border border-surface-border text-xs font-medium">CBD ${formatNumberDE(strain.cbd)}%</span>`);
+                }
+                if (strain.zeitraumRaw) {
+                    const label = /tag/i.test(strain.zeitraumRaw) ? strain.zeitraumRaw : `${strain.zeitraumRaw} Tage`;
+                    pills.push(`<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-bg text-ink-secondary border border-surface-border text-xs font-medium">${escapeHtml(label)}</span>`);
+                }
+                if (pills.length === 0) return '';
+                return `<div class="flex flex-wrap gap-1.5">${pills.join('')}</div>`;
+            }
+
+            function renderFlavorPills(flavors) {
+                if (!flavors || flavors.length === 0) return '';
+                return `
+                    <div class="flex flex-wrap gap-1.5 pt-2 border-t border-surface-border/70">
+                        ${flavors.map(f => {
+                            const isSelected = state.filters.flavors.has(f.toLowerCase());
+                            const cls = isSelected
+                                ? 'bg-tealbrand text-white border-tealbrand'
+                                : 'bg-white text-ink-secondary border-surface-border';
+                            return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full border text-[11px] font-medium ${cls}">${escapeHtml(f)}</span>`;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            function renderCard(strain) {
+                const typBadge = renderTypBadge(strain.typ);
+                const stockBadge = renderStockBadge(strain.stock);
+                const hasBadges = Boolean(typBadge || stockBadge);
+                const priceText = formatPriceDE(strain.preis);
+                const geneticsHtml = renderGeneticsBar(strain);
+                const metricsHtml = renderMetricPills(strain);
+                const flavorsHtml = renderFlavorPills(strain.flavors);
+
+                // Bildbereich nur rendern, wenn Bildlink vorhanden.
+                // Bei Ladefehler (onerror) wird das Bild sauber ausgeblendet und die Badges erscheinen kompakt im Kartenkopf.
+                const imageSection = strain.bildlink ? `
+                    <div class="card-img-wrap relative w-full aspect-[16/10] bg-surface-bg overflow-hidden border-b border-surface-border/70">
+                        <img
+                            src="${escapeHtml(strain.bildlink)}"
+                            alt="${escapeHtml(strain.strainname)}"
+                            loading="lazy"
+                            class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                            onerror="const wrap=this.closest('.card-img-wrap'); if(wrap){wrap.classList.add('hidden'); const fallbackBar=wrap.nextElementSibling; if(fallbackBar && fallbackBar.classList.contains('card-fallback-badges')){fallbackBar.classList.remove('hidden');}}"
+                        >
+                        ${hasBadges ? `
+                        <div class="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none">
+                            <div>${typBadge}</div>
+                            <div>${stockBadge}</div>
+                        </div>` : ''}
+                    </div>
+                    ${hasBadges ? `
+                    <div class="card-fallback-badges hidden px-4 pt-4 flex items-center justify-between gap-2">
+                        <div>${typBadge}</div>
+                        <div>${stockBadge}</div>
+                    </div>` : ''}
+                ` : (hasBadges ? `
+                    <div class="px-4 pt-4 flex items-center justify-between gap-2">
+                        <div>${typBadge}</div>
+                        <div>${stockBadge}</div>
+                    </div>
+                ` : '');
+
+                return `
+                    <article data-strain-id="${strain.id}"
+                        class="strain-card group bg-white rounded-2xl border border-surface-border hover:border-tealbrand/60 hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col cursor-pointer active:scale-[0.99] animate-fade-up">
+                        ${imageSection}
+
+                        <div class="p-4 flex-1 flex flex-col gap-3">
+                            <!-- Marke, Strainname & Preis -->
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    ${strain.marke ? `<p class="text-[11px] font-bold uppercase tracking-wider text-tealbrand truncate mb-0.5">${escapeHtml(strain.marke)}</p>` : ''}
+                                    <h3 class="text-base font-bold text-ink-primary leading-snug line-clamp-2 group-hover:text-tealbrand-dark transition-colors">
+                                        ${escapeHtml(strain.strainname)}
+                                    </h3>
+                                </div>
+                                ${priceText ? `
+                                <div class="shrink-0 text-right">
+                                    <span class="text-base font-bold text-ink-primary whitespace-nowrap">${escapeHtml(priceText)}</span>
+                                </div>` : ''}
+                            </div>
+
+                            ${geneticsHtml}
+                            ${metricsHtml}
+                            <div class="mt-auto">${flavorsHtml}</div>
+                        </div>
+                    </article>
+                `;
+            }
+
+            function render() {
+                const results = getFilteredAndSortedStrains();
+                const total = state.strains.length;
+                const activeCount = getActiveFilterCount();
+
+                // Header Status aktualisieren
+                el.statusDot.className = state.isDemo
+                    ? 'w-2 h-2 rounded-full bg-amber-500'
+                    : 'w-2 h-2 rounded-full bg-tealbrand';
+                el.statusText.textContent = state.isDemo
+                    ? `Demo · ${total} Sorten`
+                    : `Live · ${total} ${total === 1 ? 'Sorte' : 'Sorten'}`;
+
+                // Filter-Zurücksetzen-Button & UND-Hinweis
+                if (activeCount > 0) {
+                    el.resetBtn.classList.remove('hidden');
+                    el.activeFilterCount.textContent = String(activeCount);
+                } else {
+                    el.resetBtn.classList.add('hidden');
+                }
+
+                if (activeCount >= 2) {
+                    el.andLogicHint.classList.remove('hidden');
+                } else {
+                    el.andLogicHint.classList.add('hidden');
+                }
+
+                // Ergebnis-Zähler
+                el.resultsSummary.textContent = results.length === total
+                    ? `${total} ${total === 1 ? 'Sorte' : 'Sorten'} gesamt`
+                    : `${results.length} von ${total} ${total === 1 ? 'Sorte' : 'Sorten'} passend`;
+
+                // Karten oder Leerzustand anzeigen
+                if (results.length === 0) {
+                    el.cardsGrid.innerHTML = '';
+                    el.cardsGrid.classList.add('hidden');
+                    el.emptyState.classList.remove('hidden');
+                } else {
+                    el.emptyState.classList.add('hidden');
+                    el.cardsGrid.classList.remove('hidden');
+                    el.cardsGrid.innerHTML = results.map(renderCard).join('');
+                }
+            }
+
+            // ------------------------------------------------------------
+            // 9. DETAIL-MODAL
+            // ------------------------------------------------------------
+            function openDetailModal(strain) {
+                if (!strain) return;
+
+                const typBadge = renderTypBadge(strain.typ);
+                const stockBadge = renderStockBadge(strain.stock);
+                const priceText = formatPriceDE(strain.preis);
+                const geneticsHtml = renderGeneticsBar(strain);
+
+                // Detail-Kacheln nur für nicht-leere Felder
+                const specs = [];
+                if (strain.thc !== null) specs.push({ label: 'THC', value: `${formatNumberDE(strain.thc)} %` });
+                if (strain.cbd !== null) specs.push({ label: 'CBD', value: `${formatNumberDE(strain.cbd)} %` });
+                if (strain.zeitraumRaw) {
+                    const labelVal = /tag/i.test(strain.zeitraumRaw) ? strain.zeitraumRaw : `${strain.zeitraumRaw} Tage`;
+                    specs.push({ label: 'Zeitraum', value: labelVal });
+                }
+                if (strain.stock !== null) {
+                    specs.push({ label: 'Bestand', value: `${formatNumberDE(strain.stock, 0)} Stk.` });
+                }
+
+                const specsHtml = specs.length > 0 ? `
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        ${specs.map(item => `
+                            <div class="p-3 rounded-xl bg-surface-bg border border-surface-border">
+                                <div class="text-[11px] font-semibold uppercase tracking-wider text-ink-secondary">${escapeHtml(item.label)}</div>
+                                <div class="text-sm font-bold text-ink-primary mt-0.5">${escapeHtml(item.value)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '';
+
+                const flavorsHtml = strain.flavors.length > 0 ? `
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-wider text-ink-secondary mb-2">Geschmack</div>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${strain.flavors.map(f => `
+                                <span class="inline-flex items-center px-3 py-1 rounded-full bg-tealbrand-soft text-tealbrand-dark text-xs font-semibold">
+                                    ${escapeHtml(f)}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : '';
+
+                const imageHtml = strain.bildlink ? `
+                    <div class="modal-img-wrap relative w-full aspect-[16/10] bg-surface-bg border-b border-surface-border overflow-hidden">
+                        <img src="${escapeHtml(strain.bildlink)}" alt="${escapeHtml(strain.strainname)}"
+                            class="w-full h-full object-cover"
+                            onerror="this.closest('.modal-img-wrap').remove();">
+                    </div>
+                ` : '';
+
+                el.detailModalContent.innerHTML = `
+                    <div class="relative">
+                        <button id="closeDetailBtn" type="button"
+                            class="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/90 hover:bg-white border border-surface-border text-ink-primary flex items-center justify-center shadow-sm transition active:scale-95"
+                            aria-label="Schließen">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                        ${imageHtml}
+                    </div>
+
+                    <div class="p-5 sm:p-6 space-y-5">
+                        <div class="space-y-2 pr-8">
+                            ${(typBadge || stockBadge) ? `
+                            <div class="flex flex-wrap items-center gap-2">
+                                ${typBadge}
+                                ${stockBadge}
+                            </div>` : ''}
+
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    ${strain.marke ? `<p class="text-xs font-bold uppercase tracking-wider text-tealbrand mb-0.5">${escapeHtml(strain.marke)}</p>` : ''}
+                                    <h2 id="detailModalTitle" class="text-xl font-bold text-ink-primary leading-snug">
+                                        ${escapeHtml(strain.strainname)}
+                                    </h2>
+                                </div>
+                                ${priceText ? `<div class="text-xl font-bold text-tealbrand-dark whitespace-nowrap">${escapeHtml(priceText)}</div>` : ''}
+                            </div>
+                        </div>
+
+                        ${geneticsHtml}
+                        ${specsHtml}
+                        ${flavorsHtml}
+                    </div>
+                `;
+
+                el.detailModal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+
+                const closeBtn = document.getElementById('closeDetailBtn');
+                if (closeBtn) closeBtn.addEventListener('click', closeDetailModal);
+            }
+
+            function closeDetailModal() {
+                el.detailModal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            // ------------------------------------------------------------
+            // 10. FILTER-STEUERUNG & RESET
+            // ------------------------------------------------------------
+            function updateSegmentedButtons(buttons, activeAttr, activeVal) {
+                buttons.forEach(btn => {
+                    const isActive = btn.dataset[activeAttr] === activeVal;
+                    btn.className = btn.className
+                        .replace(/\bbg-tealbrand\b|\btext-white\b|\btext-ink-secondary\b|\bhover:text-ink-primary\b/g, '')
+                        .trim();
+                    if (isActive) {
+                        btn.classList.add('bg-tealbrand', 'text-white');
+                    } else {
+                        btn.classList.add('text-ink-secondary', 'hover:text-ink-primary');
+                    }
+                });
+            }
+
+            function updateInStockButtonUI() {
+                const active = state.filters.inStockOnly;
+                el.inStockBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+                if (active) {
+                    el.inStockBtn.classList.remove('bg-surface-bg', 'border-surface-border', 'text-ink-primary');
+                    el.inStockBtn.classList.add('bg-tealbrand', 'border-tealbrand', 'text-white');
+                    el.inStockDot.classList.remove('bg-slate-400');
+                    el.inStockDot.classList.add('bg-white');
+                } else {
+                    el.inStockBtn.classList.add('bg-surface-bg', 'border-surface-border', 'text-ink-primary');
+                    el.inStockBtn.classList.remove('bg-tealbrand', 'border-tealbrand', 'text-white');
+                    el.inStockDot.classList.add('bg-slate-400');
+                    el.inStockDot.classList.remove('bg-white');
+                }
+            }
+
+            function resetAllFilters() {
+                state.filters.search = '';
+                state.filters.typ = 'alle';
+                state.filters.genetik = 'alle';
+                state.filters.brand = '';
+                state.filters.thcMin = null;
+                state.filters.daysMax = null;
+                state.filters.priceMax = null;
+                state.filters.inStockOnly = false;
+                state.filters.flavors.clear();
+                state.filters.sort = 'default';
+
+                el.searchInput.value = '';
+                el.clearSearchBtn.classList.add('hidden');
+                el.brandSelect.value = '';
+                el.thcMinInput.value = '';
+                el.daysMaxInput.value = '';
+                el.priceMaxInput.value = '';
+                el.sortSelect.value = 'default';
+
+                updateSegmentedButtons(el.typBtns, 'typ', 'alle');
+                updateSegmentedButtons(el.genetikBtns, 'genetik', 'alle');
+                updateInStockButtonUI();
+                renderFlavorTagFilter();
+                render();
+            }
+
+            // ------------------------------------------------------------
+            // 11. EVENT-LISTENER
+            // ------------------------------------------------------------
+            // Suche
+            el.searchInput.addEventListener('input', e => {
+                state.filters.search = e.target.value;
+                el.clearSearchBtn.classList.toggle('hidden', state.filters.search.length === 0);
+                render();
+            });
+
+            el.clearSearchBtn.addEventListener('click', () => {
+                state.filters.search = '';
+                el.searchInput.value = '';
+                el.clearSearchBtn.classList.add('hidden');
+                el.searchInput.focus();
+                render();
+            });
+
+            // Sortierung
+            el.sortSelect.addEventListener('change', e => {
+                state.filters.sort = e.target.value;
+                render();
+            });
+
+            // Nur auf Lager
+            el.inStockBtn.addEventListener('click', () => {
+                state.filters.inStockOnly = !state.filters.inStockOnly;
+                updateInStockButtonUI();
+                render();
+            });
+
+            // Typ Buttons
+            el.typBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.filters.typ = btn.dataset.typ;
+                    updateSegmentedButtons(el.typBtns, 'typ', state.filters.typ);
+                    render();
+                });
+            });
+
+            // Genetik Buttons
+            el.genetikBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.filters.genetik = btn.dataset.genetik;
+                    updateSegmentedButtons(el.genetikBtns, 'genetik', state.filters.genetik);
+                    render();
+                });
+            });
+
+            // Marke Dropdown
+            el.brandSelect.addEventListener('change', e => {
+                state.filters.brand = e.target.value;
+                render();
+            });
+
+            // Numerische Direktfilter (THC ab %, Zeitraum bis Tage, Preis max €)
+            el.thcMinInput.addEventListener('input', e => {
+                state.filters.thcMin = parseGermanNumber(e.target.value);
+                render();
+            });
+
+            el.daysMaxInput.addEventListener('input', e => {
+                state.filters.daysMax = parseGermanNumber(e.target.value);
+                render();
+            });
+
+            el.priceMaxInput.addEventListener('input', e => {
+                state.filters.priceMax = parseGermanNumber(e.target.value);
+                render();
+            });
+
+            // Geschmack-Tags (Event Delegation)
+            el.flavorTagsContainer.addEventListener('click', e => {
+                const btn = e.target.closest('.flavor-pill');
+                if (!btn) return;
+                const key = btn.dataset.flavor;
+                if (!key) return;
+
+                if (state.filters.flavors.has(key)) {
+                    state.filters.flavors.delete(key);
+                } else {
+                    state.filters.flavors.add(key);
+                }
+
+                renderFlavorTagFilter();
+                render();
+            });
+
+            // Zurücksetzen
+            el.resetBtn.addEventListener('click', resetAllFilters);
+            el.emptyResetBtn.addEventListener('click', resetAllFilters);
+
+            // Neu laden
+            el.reloadBtn.addEventListener('click', () => loadData(true));
+            el.retryFetchBtn.addEventListener('click', () => loadData(true));
+
+            // Klick auf Karte -> Detail-Modal
+            el.cardsGrid.addEventListener('click', e => {
+                const card = e.target.closest('.strain-card');
+                if (!card) return;
+                const id = Number(card.dataset.strainId);
+                const strain = state.strains.find(s => s.id === id);
+                if (strain) openDetailModal(strain);
+            });
+
+            // Detail-Modal bei Backdrop-Klick schließen
+            el.detailModal.addEventListener('click', e => {
+                if (e.target === el.detailModal) closeDetailModal();
+            });
+
+            // Einstellungen-Modal
+            function openSettingsModal() {
+                el.csvUrlInput.value = getActiveCsvUrl();
+                el.settingsFeedback.classList.add('hidden');
+                el.settingsModal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            }
+
+            function closeSettingsModal() {
+                el.settingsModal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            el.settingsBtn.addEventListener('click', openSettingsModal);
+            el.closeSettingsBtn.addEventListener('click', closeSettingsModal);
+            el.cancelSettingsBtn.addEventListener('click', closeSettingsModal);
+            el.settingsModal.addEventListener('click', e => {
+                if (e.target === el.settingsModal) closeSettingsModal();
+            });
+
+            el.resetUrlBtn.addEventListener('click', () => {
+                el.csvUrlInput.value = DEFAULT_CSV_URL;
+                try { localStorage.removeItem(STORAGE_KEY_URL); } catch (e) {}
+                el.settingsFeedback.textContent = 'Standard-URL wiederhergestellt.';
+                el.settingsFeedback.classList.remove('hidden');
+            });
+
+            el.saveSettingsBtn.addEventListener('click', () => {
+                const newUrl = el.csvUrlInput.value.trim();
+                if (!newUrl || !/^https?:\/\//i.test(newUrl)) {
+                    el.settingsFeedback.textContent = 'Bitte eine gültige http(s):// CSV-URL eingeben.';
+                    el.settingsFeedback.classList.remove('hidden');
+                    return;
+                }
+                try { localStorage.setItem(STORAGE_KEY_URL, newUrl); } catch (e) {}
+                closeSettingsModal();
+                loadData(true);
+            });
+
+            // ESC schließt offene Modals
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape') {
+                    if (!el.detailModal.classList.contains('hidden')) closeDetailModal();
+                    if (!el.settingsModal.classList.contains('hidden')) closeSettingsModal();
+                }
+            });
+
+            // ------------------------------------------------------------
+            // 12. INITIALER START
+            // ------------------------------------------------------------
+            loadData(false);
+        })();
+    </script>
+</body>
+</html>
