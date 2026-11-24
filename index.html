@@ -1211,9 +1211,9 @@
       </svg>`;
     }
 
-    function renderMediaHtml(item) {
+   function renderMediaHtml(item) {
       if (!item.bildlink) return placeholderSvg();
-      return `<img src="${escapeHtml(item.bildlink)}" alt="${escapeHtml(item.strainname)}" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='${placeholderSvg().replace(/'/g, "\\'")}'" />`;
+      return `<img src="${escapeHtml(item.bildlink)}" alt="${escapeHtml(item.strainname)}" referrerpolicy="no-referrer" onerror="this.outerHTML = placeholderSvg()" />`;
     }
 
     function render() {
