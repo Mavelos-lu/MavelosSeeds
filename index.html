@@ -1,3 +1,10 @@
+Hier ist der komplette, angepasste HTML-Code für GitHub:
+
+* **Alles aus deiner bestehenden Version bleibt unverändert** (Farben, Layout, CSV-Logik, Tabellenwerte wie Marke, Strainname, Geschmack und Zahlen).
+* **Behobener Fehler:** Das fehlerhafte `- { box-sizing: border-box; }` oben im CSS ist zu `* { box-sizing: border-box; }` korrigiert, und `renderMediaHtml` nutzt das saubere `onerror="this.outerHTML = placeholderSvg()"`.
+* **4-Sprachen-UI (DE / FR / EN / PT):** Oben rechts im Header sitzt ein kompakter Sprach-Umschalter (`DE | FR | EN | PT`), der die gewählte Sprache speichert und ausschließlich alle Oberflächentexte (Filter, Sortierung, Buttons, Status, Lageranzeige, Modal-Labels) umschaltet.
+
+```html
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -56,6 +63,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      flex-wrap: wrap;
     }
 
     .brand {
@@ -100,6 +108,41 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .lang-switch {
+      display: inline-flex;
+      align-items: center;
+      height: 42px;
+      padding: 3px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      gap: 2px;
+    }
+
+    .lang-btn {
+      height: 34px;
+      padding: 0 9px;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .lang-btn:hover {
+      color: var(--text);
+    }
+
+    .lang-btn.active {
+      background: var(--surface);
+      color: var(--primary-dark);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
     }
 
     .icon-btn {
@@ -639,20 +682,27 @@
       </div>
 
       <div class="header-actions">
-        <button type="button" class="icon-btn active" id="toggleFilterBtn" title="Filter ein-/ausblenden">
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" class="lang-btn active" data-lang="de">DE</button>
+          <button type="button" class="lang-btn" data-lang="fr">FR</button>
+          <button type="button" class="lang-btn" data-lang="en">EN</button>
+          <button type="button" class="lang-btn" data-lang="pt">PT</button>
+        </div>
+
+        <button type="button" class="icon-btn active" id="toggleFilterBtn">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
           </svg>
-          <span>Filter</span>
+          <span id="filterBtnLabel">Filter</span>
           <span class="badge-count" id="activeFilterCount" style="display:none;">0</span>
         </button>
 
-        <button type="button" class="icon-btn primary" id="reloadBtn" title="Daten aus Google Sheets neu laden">
+        <button type="button" class="icon-btn primary" id="reloadBtn">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
           </svg>
-          <span>Aktualisieren</span>
+          <span id="reloadBtnLabel">Aktualisieren</span>
         </button>
       </div>
     </div>
@@ -662,27 +712,27 @@
     <div class="filter-inner">
       <div class="filter-row-top">
         <div class="field">
-          <label for="searchInput">Suche</label>
+          <label for="searchInput" id="lblSearch">Suche</label>
           <input type="text" id="searchInput" placeholder="Strain, Marke oder Geschmack suchen…" />
         </div>
 
         <div class="field">
-          <label for="sortSelect">Sortierung</label>
+          <label for="sortSelect" id="lblSort">Sortierung</label>
           <select id="sortSelect">
-            <option value="default">Standard (Tabelle)</option>
-            <option value="price-asc">Preis: Niedrig → Hoch</option>
-            <option value="price-desc">Preis: Hoch → Niedrig</option>
-            <option value="thc-desc">THC: Hoch → Niedrig</option>
-            <option value="thc-asc">THC: Niedrig → Hoch</option>
-            <option value="stock-desc">Bestand: Hoch → Niedrig</option>
-            <option value="name-asc">Name: A → Z</option>
+            <option value="default" id="optSortDefault">Standard (Tabelle)</option>
+            <option value="price-asc" id="optSortPriceAsc">Preis: Niedrig → Hoch</option>
+            <option value="price-desc" id="optSortPriceDesc">Preis: Hoch → Niedrig</option>
+            <option value="thc-desc" id="optSortThcDesc">THC: Hoch → Niedrig</option>
+            <option value="thc-asc" id="optSortThcAsc">THC: Niedrig → Hoch</option>
+            <option value="stock-desc" id="optSortStockDesc">Bestand: Hoch → Niedrig</option>
+            <option value="name-asc" id="optSortNameAsc">Name: A → Z</option>
           </select>
         </div>
 
         <div class="field">
           <label>&nbsp;</label>
           <button type="button" class="toggle-pill" id="stockToggle">
-            <span>Nur auf Lager</span>
+            <span id="stockToggleLabel">Nur auf Lager</span>
           </button>
         </div>
 
@@ -694,54 +744,54 @@
 
       <div class="filter-row">
         <div class="field">
-          <label for="typSelect">Typ</label>
+          <label for="typSelect" id="lblTyp">Typ</label>
           <select id="typSelect">
             <option value="ALL">Alle Typen</option>
           </select>
         </div>
 
         <div class="field">
-          <label for="dominanzSelect">Dominanz</label>
+          <label for="dominanzSelect" id="lblDominanz">Dominanz</label>
           <select id="dominanzSelect">
             <option value="ALL">Alle Dominanzen</option>
           </select>
         </div>
 
         <div class="field">
-          <label for="markeSelect">Marke</label>
+          <label for="markeSelect" id="lblMarke">Marke</label>
           <select id="markeSelect">
             <option value="ALL">Alle Marken</option>
           </select>
         </div>
 
         <div class="field">
-          <label for="zeitraumSelect">Zeitraum</label>
+          <label for="zeitraumSelect" id="lblZeitraum">Zeitraum</label>
           <select id="zeitraumSelect">
             <option value="ALL">Alle Zeiträume</option>
           </select>
         </div>
 
         <div class="field">
-          <label for="seedmengeSelect">Seedmenge</label>
+          <label for="seedmengeSelect" id="lblSeedmenge">Seedmenge</label>
           <select id="seedmengeSelect">
             <option value="ALL">Alle Mengen</option>
           </select>
         </div>
 
         <div class="field">
-          <label for="thcInput">THC ab (%)</label>
+          <label for="thcInput" id="lblThc">THC ab (%)</label>
           <input type="number" id="thcInput" min="0" max="100" step="0.1" placeholder="z. B. 20" />
         </div>
 
         <div class="field">
-          <label for="priceInput">Preis max (€)</label>
+          <label for="priceInput" id="lblPrice">Preis max (€)</label>
           <input type="number" id="priceInput" min="0" step="0.5" placeholder="z. B. 40" />
         </div>
       </div>
 
       <div class="flavor-section" id="flavorSection" style="display:none;">
         <div class="flavor-header">
-          <span>Geschmack (UND-Filter – mehrere auswählbar)</span>
+          <span id="lblFlavorHeader">Geschmack (UND-Filter – mehrere auswählbar)</span>
           <span id="selectedFlavorInfo"></span>
         </div>
         <div class="flavor-tags" id="flavorTags"></div>
@@ -751,7 +801,7 @@
 
   <main>
     <div class="results-bar">
-      <div><strong id="visibleCount">0</strong> von <span id="totalCount">0</span> Sorten angezeigt</div>
+      <div id="resultsCountText"><strong id="visibleCount">0</strong> von <span id="totalCount">0</span> Sorten angezeigt</div>
       <div id="activeSummary"></div>
     </div>
 
@@ -768,6 +818,254 @@
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-CFrZC-h66xhN85F3ndPWKQPDpi5-AjbXN9_DqtUwjlVJ16Lgqk876YmeHxa0H6X7FwzFDMPdtG9_/pub?output=csv";
 
+    const I18N = {
+      de: {
+        locale: "de-DE",
+        connecting: "Verbinde mit Google Sheets…",
+        loading: "Lade Tabelle…",
+        liveStatus: (time) => `Live • Stand ${time} Uhr`,
+        loadErrorStatus: "Fehler beim Laden",
+        loadErrorTitle: "Tabelle konnte nicht geladen werden.",
+        loadErrorSub: "Prüfe die WLAN-Verbindung und tippe oben auf „Aktualisieren“.",
+        filterBtn: "Filter",
+        filterBtnTitle: "Filter ein-/ausblenden",
+        reloadBtn: "Aktualisieren",
+        reloadBtnTitle: "Daten aus Google Sheets neu laden",
+        searchLabel: "Suche",
+        searchPlaceholder: "Strain, Marke oder Geschmack suchen…",
+        sortLabel: "Sortierung",
+        sortDefault: "Standard (Tabelle)",
+        sortPriceAsc: "Preis: Niedrig → Hoch",
+        sortPriceDesc: "Preis: Hoch → Niedrig",
+        sortThcDesc: "THC: Hoch → Niedrig",
+        sortThcAsc: "THC: Niedrig → Hoch",
+        sortStockDesc: "Bestand: Hoch → Niedrig",
+        sortNameAsc: "Name: A → Z",
+        stockToggle: "Nur auf Lager",
+        resetBtn: "Zurücksetzen",
+        typLabel: "Typ",
+        allTypes: "Alle Typen",
+        dominanzLabel: "Dominanz",
+        allDominances: "Alle Dominanzen",
+        markeLabel: "Marke",
+        allBrands: "Alle Marken",
+        zeitraumLabel: "Zeitraum",
+        allPeriods: "Alle Zeiträume",
+        seedmengeLabel: "Seedmenge",
+        allAmounts: "Alle Mengen",
+        thcLabel: "THC ab (%)",
+        thcPlaceholder: "z. B. 20",
+        priceLabel: "Preis max (€)",
+        pricePlaceholder: "z. B. 40",
+        flavorHeader: "Geschmack (UND-Filter – mehrere auswählbar)",
+        flavorSelected: (n) => `${n} ausgewählt`,
+        activeFilters: (n) => `${n} Filter aktiv (UND)`,
+        resultsSummary: (vis, tot) => `<strong>${vis}</strong> von <span>${tot}</span> Sorten angezeigt`,
+        emptyTitle: "Keine passenden Sorten gefunden.",
+        emptySub: "Passe deine Filter an oder tippe auf „Zurücksetzen“.",
+        daysUnit: "Tage",
+        inStock: (n) => `${n} auf Lager`,
+        outOfStock: "Ausverkauft",
+        piecesUnit: "Stück",
+        closeLabel: "Schließen",
+        modalBrand: "Marke",
+        modalTyp: "Typ",
+        modalDominanz: "Dominanz",
+        modalRatio: "Indica / Sativa",
+        modalZeitraum: "Zeitraum",
+        modalSeedmenge: "Seedmenge",
+        modalPreis: "Preis",
+        modalStock: "Bestand (Stock)"
+      },
+      fr: {
+        locale: "fr-FR",
+        connecting: "Connexion à Google Sheets…",
+        loading: "Chargement du tableau…",
+        liveStatus: (time) => `En direct • Mis à jour à ${time}`,
+        loadErrorStatus: "Erreur de chargement",
+        loadErrorTitle: "Impossible de charger le tableau.",
+        loadErrorSub: "Vérifiez la connexion Wi-Fi et appuyez sur « Actualiser ».",
+        filterBtn: "Filtres",
+        filterBtnTitle: "Afficher/masquer les filtres",
+        reloadBtn: "Actualiser",
+        reloadBtnTitle: "Recharger les données depuis Google Sheets",
+        searchLabel: "Recherche",
+        searchPlaceholder: "Rechercher une variété, marque ou saveur…",
+        sortLabel: "Tri",
+        sortDefault: "Par défaut (tableau)",
+        sortPriceAsc: "Prix : Croissant",
+        sortPriceDesc: "Prix : Décroissant",
+        sortThcDesc: "THC : Décroissant",
+        sortThcAsc: "THC : Croissant",
+        sortStockDesc: "Stock : Décroissant",
+        sortNameAsc: "Nom : A → Z",
+        stockToggle: "En stock uniquement",
+        resetBtn: "Réinitialiser",
+        typLabel: "Type",
+        allTypes: "Tous les types",
+        dominanzLabel: "Dominance",
+        allDominances: "Toutes les dominances",
+        markeLabel: "Marque",
+        allBrands: "Toutes les marques",
+        zeitraumLabel: "Durée",
+        allPeriods: "Toutes les durées",
+        seedmengeLabel: "Quantité",
+        allAmounts: "Toutes les quantités",
+        thcLabel: "THC min (%)",
+        thcPlaceholder: "ex. 20",
+        priceLabel: "Prix max (€)",
+        pricePlaceholder: "ex. 40",
+        flavorHeader: "Saveurs (filtre ET – sélection multiple)",
+        flavorSelected: (n) => `${n} sélectionnée(s)`,
+        activeFilters: (n) => `${n} filtre(s) actif(s) (ET)`,
+        resultsSummary: (vis, tot) => `<strong>${vis}</strong> sur <span>${tot}</span> variétés affichées`,
+        emptyTitle: "Aucune variété correspondante trouvée.",
+        emptySub: "Modifiez vos filtres ou appuyez sur « Réinitialiser ».",
+        daysUnit: "jours",
+        inStock: (n) => `${n} en stock`,
+        outOfStock: "Rupture",
+        piecesUnit: "pcs",
+        closeLabel: "Fermer",
+        modalBrand: "Marque",
+        modalTyp: "Type",
+        modalDominanz: "Dominance",
+        modalRatio: "Indica / Sativa",
+        modalZeitraum: "Durée",
+        modalSeedmenge: "Quantité",
+        modalPreis: "Prix",
+        modalStock: "Stock"
+      },
+      en: {
+        locale: "en-GB",
+        connecting: "Connecting to Google Sheets…",
+        loading: "Loading sheet…",
+        liveStatus: (time) => `Live • Updated ${time}`,
+        loadErrorStatus: "Loading error",
+        loadErrorTitle: "Could not load spreadsheet.",
+        loadErrorSub: "Check your Wi-Fi connection and tap “Refresh” above.",
+        filterBtn: "Filter",
+        filterBtnTitle: "Show/hide filters",
+        reloadBtn: "Refresh",
+        reloadBtnTitle: "Reload data from Google Sheets",
+        searchLabel: "Search",
+        searchPlaceholder: "Search strain, brand or flavor…",
+        sortLabel: "Sort by",
+        sortDefault: "Default (Sheet)",
+        sortPriceAsc: "Price: Low → High",
+        sortPriceDesc: "Price: High → Low",
+        sortThcDesc: "THC: High → Low",
+        sortThcAsc: "THC: Low → High",
+        sortStockDesc: "Stock: High → Low",
+        sortNameAsc: "Name: A → Z",
+        stockToggle: "In stock only",
+        resetBtn: "Reset",
+        typLabel: "Type",
+        allTypes: "All types",
+        dominanzLabel: "Dominance",
+        allDominances: "All dominances",
+        markeLabel: "Brand",
+        allBrands: "All brands",
+        zeitraumLabel: "Flowering time",
+        allPeriods: "All periods",
+        seedmengeLabel: "Pack size",
+        allAmounts: "All sizes",
+        thcLabel: "Min THC (%)",
+        thcPlaceholder: "e.g. 20",
+        priceLabel: "Max price (€)",
+        pricePlaceholder: "e.g. 40",
+        flavorHeader: "Flavor (AND filter – multi-select)",
+        flavorSelected: (n) => `${n} selected`,
+        activeFilters: (n) => `${n} active filter(s) (AND)`,
+        resultsSummary: (vis, tot) => `Showing <strong>${vis}</strong> of <span>${tot}</span> strains`,
+        emptyTitle: "No matching strains found.",
+        emptySub: "Adjust your filters or tap “Reset”.",
+        daysUnit: "days",
+        inStock: (n) => `${n} in stock`,
+        outOfStock: "Sold out",
+        piecesUnit: "pcs",
+        closeLabel: "Close",
+        modalBrand: "Brand",
+        modalTyp: "Type",
+        modalDominanz: "Dominance",
+        modalRatio: "Indica / Sativa",
+        modalZeitraum: "Flowering time",
+        modalSeedmenge: "Pack size",
+        modalPreis: "Price",
+        modalStock: "Stock"
+      },
+      pt: {
+        locale: "pt-PT",
+        connecting: "A ligar ao Google Sheets…",
+        loading: "A carregar tabela…",
+        liveStatus: (time) => `Em direto • Atualizado às ${time}`,
+        loadErrorStatus: "Erro ao carregar",
+        loadErrorTitle: "Não foi possível carregar a tabela.",
+        loadErrorSub: "Verifique a ligação Wi-Fi e toque em «Atualizar» acima.",
+        filterBtn: "Filtros",
+        filterBtnTitle: "Mostrar/ocultar filtros",
+        reloadBtn: "Atualizar",
+        reloadBtnTitle: "Recarregar dados do Google Sheets",
+        searchLabel: "Pesquisar",
+        searchPlaceholder: "Pesquisar variedade, marca ou sabor…",
+        sortLabel: "Ordenar",
+        sortDefault: "Padrão (tabela)",
+        sortPriceAsc: "Preço: Menor → Maior",
+        sortPriceDesc: "Preço: Maior → Menor",
+        sortThcDesc: "THC: Maior → Menor",
+        sortThcAsc: "THC: Menor → Maior",
+        sortStockDesc: "Stock: Maior → Menor",
+        sortNameAsc: "Nome: A → Z",
+        stockToggle: "Apenas em stock",
+        resetBtn: "Limpar",
+        typLabel: "Tipo",
+        allTypes: "Todos os tipos",
+        dominanzLabel: "Dominância",
+        allDominances: "Todas as dominâncias",
+        markeLabel: "Marca",
+        allBrands: "Todas as marcas",
+        zeitraumLabel: "Período",
+        allPeriods: "Todos os períodos",
+        seedmengeLabel: "Quantidade",
+        allAmounts: "Todas as quantidades",
+        thcLabel: "THC mín (%)",
+        thcPlaceholder: "ex. 20",
+        priceLabel: "Preço máx (€)",
+        pricePlaceholder: "ex. 40",
+        flavorHeader: "Sabor (filtro E – seleção múltipla)",
+        flavorSelected: (n) => `${n} selecionado(s)`,
+        activeFilters: (n) => `${n} filtro(s) ativo(s) (E)`,
+        resultsSummary: (vis, tot) => `A mostrar <strong>${vis}</strong> de <span>${tot}</span> variedades`,
+        emptyTitle: "Nenhuma variedade correspondente encontrada.",
+        emptySub: "Ajuste os filtros ou toque em «Limpar».",
+        daysUnit: "dias",
+        inStock: (n) => `${n} em stock`,
+        outOfStock: "Esgotado",
+        piecesUnit: "un.",
+        closeLabel: "Fechar",
+        modalBrand: "Marca",
+        modalTyp: "Tipo",
+        modalDominanz: "Dominância",
+        modalRatio: "Indica / Sativa",
+        modalZeitraum: "Período",
+        modalSeedmenge: "Quantidade",
+        modalPreis: "Preço",
+        modalStock: "Stock"
+      }
+    };
+
+    function detectInitialLang() {
+      try {
+        const saved = localStorage.getItem("mavelos_seed_lang");
+        if (saved && I18N[saved]) return saved;
+      } catch (e) {}
+      const nav = (navigator.language || "de").slice(0, 2).toLowerCase();
+      return I18N[nav] ? nav : "de";
+    }
+
+    let currentLang = detectInitialLang();
+    let lastUpdatedDate = null;
+    let loadFailed = false;
+    let activeModalItem = null;
     let allStrains = [];
 
     const state = {
@@ -788,31 +1086,135 @@
     const el = {
       statusText: document.getElementById("statusText"),
       toggleFilterBtn: document.getElementById("toggleFilterBtn"),
+      filterBtnLabel: document.getElementById("filterBtnLabel"),
       activeFilterCount: document.getElementById("activeFilterCount"),
       filterPanel: document.getElementById("filterPanel"),
       reloadBtn: document.getElementById("reloadBtn"),
+      reloadBtnLabel: document.getElementById("reloadBtnLabel"),
+      lblSearch: document.getElementById("lblSearch"),
       searchInput: document.getElementById("searchInput"),
+      lblSort: document.getElementById("lblSort"),
       sortSelect: document.getElementById("sortSelect"),
+      optSortDefault: document.getElementById("optSortDefault"),
+      optSortPriceAsc: document.getElementById("optSortPriceAsc"),
+      optSortPriceDesc: document.getElementById("optSortPriceDesc"),
+      optSortThcDesc: document.getElementById("optSortThcDesc"),
+      optSortThcAsc: document.getElementById("optSortThcAsc"),
+      optSortStockDesc: document.getElementById("optSortStockDesc"),
+      optSortNameAsc: document.getElementById("optSortNameAsc"),
       stockToggle: document.getElementById("stockToggle"),
+      stockToggleLabel: document.getElementById("stockToggleLabel"),
       resetBtn: document.getElementById("resetBtn"),
+      lblTyp: document.getElementById("lblTyp"),
       typSelect: document.getElementById("typSelect"),
+      lblDominanz: document.getElementById("lblDominanz"),
       dominanzSelect: document.getElementById("dominanzSelect"),
+      lblMarke: document.getElementById("lblMarke"),
       markeSelect: document.getElementById("markeSelect"),
+      lblZeitraum: document.getElementById("lblZeitraum"),
       zeitraumSelect: document.getElementById("zeitraumSelect"),
+      lblSeedmenge: document.getElementById("lblSeedmenge"),
       seedmengeSelect: document.getElementById("seedmengeSelect"),
+      lblThc: document.getElementById("lblThc"),
       thcInput: document.getElementById("thcInput"),
+      lblPrice: document.getElementById("lblPrice"),
       priceInput: document.getElementById("priceInput"),
       flavorSection: document.getElementById("flavorSection"),
+      lblFlavorHeader: document.getElementById("lblFlavorHeader"),
       flavorTags: document.getElementById("flavorTags"),
       selectedFlavorInfo: document.getElementById("selectedFlavorInfo"),
-      visibleCount: document.getElementById("visibleCount"),
-      totalCount: document.getElementById("totalCount"),
+      resultsCountText: document.getElementById("resultsCountText"),
       activeSummary: document.getElementById("activeSummary"),
       cardsContainer: document.getElementById("cardsContainer"),
       detailModal: document.getElementById("detailModal"),
       modalMedia: document.getElementById("modalMedia"),
       modalBody: document.getElementById("modalBody")
     };
+
+    function t() {
+      return I18N[currentLang] || I18N.de;
+    }
+
+    function updateStatusLine() {
+      const tr = t();
+      if (loadFailed) {
+        el.statusText.textContent = tr.loadErrorStatus;
+      } else if (lastUpdatedDate) {
+        const time = lastUpdatedDate.toLocaleTimeString(tr.locale, { hour: "2-digit", minute: "2-digit" });
+        el.statusText.textContent = tr.liveStatus(time);
+      } else {
+        el.statusText.textContent = tr.connecting;
+      }
+    }
+
+    function applyTranslations() {
+      const tr = t();
+      document.documentElement.lang = currentLang;
+
+      document.querySelectorAll(".lang-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.lang === currentLang);
+      });
+
+      el.toggleFilterBtn.title = tr.filterBtnTitle;
+      el.filterBtnLabel.textContent = tr.filterBtn;
+      el.reloadBtn.title = tr.reloadBtnTitle;
+      el.reloadBtnLabel.textContent = tr.reloadBtn;
+
+      el.lblSearch.textContent = tr.searchLabel;
+      el.searchInput.placeholder = tr.searchPlaceholder;
+
+      el.lblSort.textContent = tr.sortLabel;
+      el.optSortDefault.textContent = tr.sortDefault;
+      el.optSortPriceAsc.textContent = tr.sortPriceAsc;
+      el.optSortPriceDesc.textContent = tr.sortPriceDesc;
+      el.optSortThcDesc.textContent = tr.sortThcDesc;
+      el.optSortThcAsc.textContent = tr.sortThcAsc;
+      el.optSortStockDesc.textContent = tr.sortStockDesc;
+      el.optSortNameAsc.textContent = tr.sortNameAsc;
+
+      el.stockToggleLabel.textContent = tr.stockToggle;
+      el.resetBtn.textContent = tr.resetBtn;
+
+      el.lblTyp.textContent = tr.typLabel;
+      el.lblDominanz.textContent = tr.dominanzLabel;
+      el.lblMarke.textContent = tr.markeLabel;
+      el.lblZeitraum.textContent = tr.zeitraumLabel;
+      el.lblSeedmenge.textContent = tr.seedmengeLabel;
+
+      el.lblThc.textContent = tr.thcLabel;
+      el.thcInput.placeholder = tr.thcPlaceholder;
+      el.lblPrice.textContent = tr.priceLabel;
+      el.priceInput.placeholder = tr.pricePlaceholder;
+
+      el.lblFlavorHeader.textContent = tr.flavorHeader;
+
+      updateStatusLine();
+
+      if (allStrains.length > 0) {
+        buildFilterOptions();
+        render();
+      } else if (loadFailed) {
+        el.cardsContainer.innerHTML = `
+          <div class="state-box" style="grid-column: 1 / -1;">
+            <strong>${escapeHtml(tr.loadErrorTitle)}</strong><br/>
+            ${escapeHtml(tr.loadErrorSub)}
+          </div>
+        `;
+      }
+
+      if (activeModalItem && el.detailModal.classList.contains("open")) {
+        openModal(activeModalItem);
+      }
+    }
+
+    function setLanguage(lang) {
+      if (!I18N[lang]) return;
+      currentLang = lang;
+      try {
+        localStorage.setItem("mavelos_seed_lang", lang);
+      } catch (e) {}
+      applyTranslations();
+    }
 
     // RFC-4180 CSV Parser (supports quoted newlines & commas)
     function parseCSV(text) {
@@ -993,44 +1395,45 @@
     }
 
     function buildFilterOptions() {
+      const tr = t();
       const uniqueSorted = (arr, numeric = false) => {
         const set = new Set(arr.filter(Boolean));
         return [...set].sort((a, b) =>
           numeric
-            ? a.localeCompare(b, "de", { numeric: true, sensitivity: "base" })
-            : a.localeCompare(b, "de", { sensitivity: "base" })
+            ? a.localeCompare(b, tr.locale, { numeric: true, sensitivity: "base" })
+            : a.localeCompare(b, tr.locale, { sensitivity: "base" })
         );
       };
 
       populateSelect(
         el.typSelect,
         uniqueSorted(allStrains.map((s) => s.typ)),
-        "Alle Typen"
+        tr.allTypes
       );
 
       populateSelect(
         el.dominanzSelect,
         uniqueSorted(allStrains.map((s) => s.dominanz)),
-        "Alle Dominanzen"
+        tr.allDominances
       );
 
       populateSelect(
         el.markeSelect,
         uniqueSorted(allStrains.map((s) => s.marke)),
-        "Alle Marken"
+        tr.allBrands
       );
 
       populateSelect(
         el.zeitraumSelect,
         uniqueSorted(allStrains.map((s) => s.zeitraum), true),
-        "Alle Zeiträume",
-        (v) => `${v} Tage`
+        tr.allPeriods,
+        (v) => `${v} ${tr.daysUnit}`
       );
 
       populateSelect(
         el.seedmengeSelect,
         uniqueSorted(allStrains.map((s) => s.seedmenge), true),
-        "Alle Mengen",
+        tr.allAmounts,
         (v) => `${v} Seeds`
       );
 
@@ -1046,7 +1449,7 @@
       });
 
       const sortedFlavors = [...flavorMap.entries()].sort((a, b) =>
-        a[1].localeCompare(b[1], "de", { sensitivity: "base" })
+        a[1].localeCompare(b[1], tr.locale, { sensitivity: "base" })
       );
 
       if (sortedFlavors.length > 0) {
@@ -1082,54 +1485,35 @@
       const maxPrice = parseNumber(state.maxPrice);
 
       const filtered = allStrains.filter((item) => {
-        // 1. Stock toggle
         if (state.inStockOnly) {
           if (item.stockNum === null || item.stockNum <= 0) return false;
         }
-
-        // 2. Typ (AND)
         if (state.typ !== "ALL") {
           if (item.typ.toLowerCase() !== state.typ.toLowerCase()) return false;
         }
-
-        // 3. Dominanz (AND)
         if (state.dominanz !== "ALL") {
           if (item.dominanz.toLowerCase() !== state.dominanz.toLowerCase()) return false;
         }
-
-        // 4. Marke (AND)
         if (state.marke !== "ALL") {
           if (item.marke.toLowerCase() !== state.marke.toLowerCase()) return false;
         }
-
-        // 5. Zeitraum dropdown (AND)
         if (state.zeitraum !== "ALL") {
           if (item.zeitraum !== state.zeitraum) return false;
         }
-
-        // 6. Seedmenge dropdown (AND)
         if (state.seedmenge !== "ALL") {
           if (item.seedmenge !== state.seedmenge) return false;
         }
-
-        // 7. Min THC (AND)
         if (minThc !== null) {
           if (item.thcNum === null || item.thcNum < minThc) return false;
         }
-
-        // 8. Max Price (AND)
         if (maxPrice !== null) {
           if (item.preisNum === null || item.preisNum > maxPrice) return false;
         }
-
-        // 9. Flavors (Strict AND across all selected flavor tags)
         if (state.flavors.size > 0) {
           for (const reqFlavor of state.flavors) {
             if (!item.flavorsLower.includes(reqFlavor)) return false;
           }
         }
-
-        // 10. Search tokens (AND)
         if (searchTokens.length > 0) {
           const haystack = [
             item.strainname,
@@ -1146,11 +1530,9 @@
             if (!haystack.includes(token)) return false;
           }
         }
-
         return true;
       });
 
-      // Sorting
       const sorted = [...filtered];
       switch (state.sort) {
         case "price-asc":
@@ -1169,7 +1551,7 @@
           sorted.sort((a, b) => (b.stockNum ?? -1) - (a.stockNum ?? -1));
           break;
         case "name-asc":
-          sorted.sort((a, b) => a.strainname.localeCompare(b.strainname, "de"));
+          sorted.sort((a, b) => a.strainname.localeCompare(b.strainname, t().locale));
           break;
         default:
           sorted.sort((a, b) => a.index - b.index);
@@ -1179,6 +1561,7 @@
     }
 
     function updateActiveFilterBadge() {
+      const tr = t();
       let count = 0;
       if (state.search) count++;
       if (state.inStockOnly) count++;
@@ -1194,14 +1577,14 @@
       if (count > 0) {
         el.activeFilterCount.style.display = "inline-block";
         el.activeFilterCount.textContent = String(count);
-        el.activeSummary.textContent = `${count} Filter aktiv (UND)`;
+        el.activeSummary.textContent = tr.activeFilters(count);
       } else {
         el.activeFilterCount.style.display = "none";
         el.activeSummary.textContent = "";
       }
 
       el.selectedFlavorInfo.textContent =
-        state.flavors.size > 0 ? `${state.flavors.size} ausgewählt` : "";
+        state.flavors.size > 0 ? tr.flavorSelected(state.flavors.size) : "";
     }
 
     function placeholderSvg() {
@@ -1211,23 +1594,23 @@
       </svg>`;
     }
 
-   function renderMediaHtml(item) {
+    function renderMediaHtml(item) {
       if (!item.bildlink) return placeholderSvg();
       return `<img src="${escapeHtml(item.bildlink)}" alt="${escapeHtml(item.strainname)}" referrerpolicy="no-referrer" onerror="this.outerHTML = placeholderSvg()" />`;
     }
 
     function render() {
+      const tr = t();
       updateActiveFilterBadge();
       const list = getFilteredStrains();
 
-      el.totalCount.textContent = String(allStrains.length);
-      el.visibleCount.textContent = String(list.length);
+      el.resultsCountText.innerHTML = tr.resultsSummary(list.length, allStrains.length);
 
       if (list.length === 0) {
         el.cardsContainer.innerHTML = `
           <div class="state-box" style="grid-column: 1 / -1;">
-            <strong>Keine passenden Sorten gefunden.</strong><br/>
-            Passe deine Filter an oder tippe auf „Zurücksetzen“.
+            <strong>${escapeHtml(tr.emptyTitle)}</strong><br/>
+            ${escapeHtml(tr.emptySub)}
           </div>
         `;
         return;
@@ -1239,12 +1622,10 @@
         const card = document.createElement("article");
         card.className = "card";
 
-        // Badges
         const badges = [];
         if (item.typ) badges.push(`<span class="badge badge-typ">${escapeHtml(item.typ)}</span>`);
         if (item.dominanz) badges.push(`<span class="badge badge-dom">${escapeHtml(item.dominanz)}</span>`);
 
-        // Ratio bar (only if Indica or Sativa present)
         let ratioHtml = "";
         if (item.indicaNum !== null || item.sativaNum !== null) {
           const ind = item.indicaNum ?? (item.sativaNum !== null ? Math.max(0, 100 - item.sativaNum) : 0);
@@ -1263,7 +1644,6 @@
           `;
         }
 
-        // Specs (skip empty values)
         const specs = [];
         if (item.thcRaw) {
           specs.push(`<div class="spec-box"><span class="spec-label">THC</span><span class="spec-val">${escapeHtml(item.thcRaw)} %</span></div>`);
@@ -1272,15 +1652,14 @@
           specs.push(`<div class="spec-box"><span class="spec-label">CBD</span><span class="spec-val">${escapeHtml(item.cbdRaw)} %</span></div>`);
         }
         if (item.zeitraum) {
-          specs.push(`<div class="spec-box"><span class="spec-label">Zeitraum</span><span class="spec-val">${escapeHtml(item.zeitraum)} Tage</span></div>`);
+          specs.push(`<div class="spec-box"><span class="spec-label">${escapeHtml(tr.zeitraumLabel)}</span><span class="spec-val">${escapeHtml(item.zeitraum)} ${escapeHtml(tr.daysUnit)}</span></div>`);
         }
         if (item.seedmenge) {
-          specs.push(`<div class="spec-box"><span class="spec-label">Seedmenge</span><span class="spec-val">${escapeHtml(item.seedmenge)} Seeds</span></div>`);
+          specs.push(`<div class="spec-box"><span class="spec-label">${escapeHtml(tr.seedmengeLabel)}</span><span class="spec-val">${escapeHtml(item.seedmenge)} Seeds</span></div>`);
         }
 
         const specsHtml = specs.length > 0 ? `<div class="specs">${specs.join("")}</div>` : "";
 
-        // Flavors (skip empty)
         const flavorsHtml =
           item.flavors.length > 0
             ? `<div class="card-flavors">${item.flavors
@@ -1288,7 +1667,6 @@
                 .join("")}</div>`
             : "";
 
-        // Footer (Price & Stock, skip if empty)
         const priceHtml = item.preisRaw
           ? `<div class="price">${escapeHtml(item.preisRaw)} €${item.seedmenge ? ` <small>/ ${escapeHtml(item.seedmenge)} Seeds</small>` : ""}</div>`
           : `<div></div>`;
@@ -1297,8 +1675,8 @@
         if (item.stockNum !== null) {
           stockHtml =
             item.stockNum > 0
-              ? `<span class="stock-pill stock-in">${escapeHtml(item.stockRaw)} auf Lager</span>`
-              : `<span class="stock-pill stock-out">Ausverkauft</span>`;
+              ? `<span class="stock-pill stock-in">${escapeHtml(tr.inStock(item.stockRaw))}</span>`
+              : `<span class="stock-pill stock-out">${escapeHtml(tr.outOfStock)}</span>`;
         }
 
         const footerHtml =
@@ -1329,22 +1707,25 @@
     }
 
     function openModal(item) {
+      const tr = t();
+      activeModalItem = item;
+
       el.modalMedia.innerHTML = `
         ${renderMediaHtml(item)}
-        <button type="button" class="modal-close" id="closeModalBtn" aria-label="Schließen">✕</button>
+        <button type="button" class="modal-close" id="closeModalBtn" aria-label="${escapeHtml(tr.closeLabel)}">✕</button>
       `;
 
       const rows = [
-        ["Marke", item.marke],
-        ["Typ", item.typ],
-        ["Dominanz", item.dominanz],
-        ["Indica / Sativa", item.indicaRaw || item.sativaRaw ? `${item.indicaRaw || "-"}% / ${item.sativaRaw || "-"}%` : ""],
+        [tr.modalBrand, item.marke],
+        [tr.modalTyp, item.typ],
+        [tr.modalDominanz, item.dominanz],
+        [tr.modalRatio, item.indicaRaw || item.sativaRaw ? `${item.indicaRaw || "-"}% / ${item.sativaRaw || "-"}%` : ""],
         ["THC", item.thcRaw ? `${item.thcRaw} %` : ""],
         ["CBD", item.cbdRaw ? `${item.cbdRaw} %` : ""],
-        ["Zeitraum", item.zeitraum ? `${item.zeitraum} Tage` : ""],
-        ["Seedmenge", item.seedmenge ? `${item.seedmenge} Seeds` : ""],
-        ["Preis", item.preisRaw ? `${item.preisRaw} €` : ""],
-        ["Bestand (Stock)", item.stockRaw ? `${item.stockRaw} Stück` : ""]
+        [tr.modalZeitraum, item.zeitraum ? `${item.zeitraum} ${tr.daysUnit}` : ""],
+        [tr.modalSeedmenge, item.seedmenge ? `${item.seedmenge} Seeds` : ""],
+        [tr.modalPreis, item.preisRaw ? `${item.preisRaw} €` : ""],
+        [tr.modalStock, item.stockRaw ? `${item.stockRaw} ${tr.piecesUnit}` : ""]
       ].filter(([, val]) => Boolean(val));
 
       const flavorsHtml =
@@ -1378,11 +1759,14 @@
     }
 
     function closeModal() {
+      activeModalItem = null;
       el.detailModal.classList.remove("open");
     }
 
     async function loadData() {
-      el.statusText.textContent = "Lade Tabelle…";
+      const tr = t();
+      loadFailed = false;
+      el.statusText.textContent = tr.loading;
       el.reloadBtn.disabled = true;
 
       try {
@@ -1396,20 +1780,26 @@
         buildFilterOptions();
         render();
 
-        const now = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-        el.statusText.textContent = `Live • Stand ${now} Uhr`;
+        lastUpdatedDate = new Date();
+        updateStatusLine();
       } catch (err) {
-        el.statusText.textContent = "Fehler beim Laden";
+        loadFailed = true;
+        updateStatusLine();
         el.cardsContainer.innerHTML = `
           <div class="state-box" style="grid-column: 1 / -1;">
-            <strong>Tabelle konnte nicht geladen werden.</strong><br/>
-            Prüfe die WLAN-Verbindung und tippe oben auf „Aktualisieren“.
+            <strong>${escapeHtml(t().loadErrorTitle)}</strong><br/>
+            ${escapeHtml(t().loadErrorSub)}
           </div>
         `;
       } finally {
         el.reloadBtn.disabled = false;
       }
     }
+
+    // Language Switcher Events
+    document.querySelectorAll(".lang-btn").forEach((btn) => {
+      btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
+    });
 
     // Event Listeners
     el.toggleFilterBtn.addEventListener("click", () => {
@@ -1503,7 +1893,10 @@
       if (e.target === el.detailModal) closeModal();
     });
 
+    applyTranslations();
     loadData();
   </script>
 </body>
 </html>
+
+```
