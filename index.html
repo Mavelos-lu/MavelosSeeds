@@ -458,6 +458,13 @@
       line-height: 1.3;
     }
 
+    .card-genetics {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+      line-height: 1.35;
+    }
+
     /* Ratio Bar */
     .ratio-wrap {
       display: flex;
@@ -468,9 +475,16 @@
     .ratio-labels {
       display: flex;
       justify-content: space-between;
-      font-size: 0.74rem;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.73rem;
       color: var(--text-muted);
       font-weight: 600;
+    }
+
+    .ratio-labels span:nth-child(2):not(:last-child) {
+      text-align: center;
+      color: #004D40;
     }
 
     .ratio-bar {
@@ -483,6 +497,11 @@
 
     .ratio-indica {
       background: var(--primary);
+      height: 100%;
+    }
+
+    .ratio-ruderalis {
+      background: #FFB300;
       height: 100%;
     }
 
@@ -706,7 +725,7 @@
       <div class="filter-row-top">
         <div class="field">
           <label for="searchInput" id="lblSearch">Suche</label>
-          <input type="text" id="searchInput" placeholder="Strain, Marke oder Geschmack suchen…" />
+          <input type="text" id="searchInput" placeholder="Strain, Marke, Genetik oder Geschmack suchen…" />
         </div>
 
         <div class="field">
@@ -825,7 +844,7 @@
         reloadBtn: "Aktualisieren",
         reloadBtnTitle: "Daten aus Google Sheets neu laden",
         searchLabel: "Suche",
-        searchPlaceholder: "Strain, Marke oder Geschmack suchen…",
+        searchPlaceholder: "Strain, Marke, Genetik oder Geschmack suchen…",
         sortLabel: "Sortierung",
         sortDefault: "Standard (Tabelle)",
         sortPriceAsc: "Preis: Niedrig → Hoch",
@@ -862,9 +881,11 @@
         piecesUnit: "Stück",
         closeLabel: "Schließen",
         modalBrand: "Marke",
+        modalGenetics: "Genetik",
         modalTyp: "Typ",
         modalDominanz: "Dominanz",
         modalRatio: "Indica / Sativa",
+        modalRatioRuderalis: "Indica / Ruderalis / Sativa",
         modalZeitraum: "Zeitraum",
         modalSeedmenge: "Seedmenge",
         modalPreis: "Preis",
@@ -883,7 +904,7 @@
         reloadBtn: "Actualiser",
         reloadBtnTitle: "Recharger les données depuis Google Sheets",
         searchLabel: "Recherche",
-        searchPlaceholder: "Rechercher une variété, marque ou saveur…",
+        searchPlaceholder: "Rechercher variété, marque, génétique ou saveur…",
         sortLabel: "Tri",
         sortDefault: "Par défaut (tableau)",
         sortPriceAsc: "Prix : Croissant",
@@ -920,9 +941,11 @@
         piecesUnit: "pcs",
         closeLabel: "Fermer",
         modalBrand: "Marque",
+        modalGenetics: "Génétique",
         modalTyp: "Type",
         modalDominanz: "Dominance",
         modalRatio: "Indica / Sativa",
+        modalRatioRuderalis: "Indica / Ruderalis / Sativa",
         modalZeitraum: "Durée",
         modalSeedmenge: "Quantité",
         modalPreis: "Prix",
@@ -941,7 +964,7 @@
         reloadBtn: "Refresh",
         reloadBtnTitle: "Reload data from Google Sheets",
         searchLabel: "Search",
-        searchPlaceholder: "Search strain, brand or flavor…",
+        searchPlaceholder: "Search strain, brand, genetics or flavor…",
         sortLabel: "Sort by",
         sortDefault: "Default (Sheet)",
         sortPriceAsc: "Price: Low → High",
@@ -978,9 +1001,11 @@
         piecesUnit: "pcs",
         closeLabel: "Close",
         modalBrand: "Brand",
+        modalGenetics: "Genetics",
         modalTyp: "Type",
         modalDominanz: "Dominance",
         modalRatio: "Indica / Sativa",
+        modalRatioRuderalis: "Indica / Ruderalis / Sativa",
         modalZeitraum: "Flowering time",
         modalSeedmenge: "Pack size",
         modalPreis: "Price",
@@ -999,7 +1024,7 @@
         reloadBtn: "Atualizar",
         reloadBtnTitle: "Recarregar dados do Google Sheets",
         searchLabel: "Pesquisar",
-        searchPlaceholder: "Pesquisar variedade, marca ou sabor…",
+        searchPlaceholder: "Pesquisar variedade, marca, genética ou sabor…",
         sortLabel: "Ordenar",
         sortDefault: "Padrão (tabela)",
         sortPriceAsc: "Preço: Menor → Maior",
@@ -1036,9 +1061,11 @@
         piecesUnit: "un.",
         closeLabel: "Fechar",
         modalBrand: "Marca",
+        modalGenetics: "Genética",
         modalTyp: "Tipo",
         modalDominanz: "Dominância",
         modalRatio: "Indica / Sativa",
+        modalRatioRuderalis: "Indica / Ruderalis / Sativa",
         modalZeitraum: "Período",
         modalSeedmenge: "Quantidade",
         modalPreis: "Preço",
@@ -1298,10 +1325,12 @@
       const col = {
         marke: idx(["marke"]),
         strainname: idx(["strainname", "strain", "name"]),
+        genetik: idx(["genetik", "genetics", "kreuzung"]),
         typ: idx(["typ"]),
         dominanz: idx(["dominanz"]),
         indica: idx(["indica in %", "indica"]),
         sativa: idx(["sativa in %", "sativa"]),
+        ruderalis: idx(["ruderalis %", "ruderalis in %", "ruderalis"]),
         thc: idx(["thc"]),
         cbd: idx(["cbd"]),
         zeitraum: idx(["zeitraum"]),
@@ -1326,10 +1355,12 @@
         const marke = get(col.marke);
         if (!strainname && !marke) continue;
 
+        const genetik = get(col.genetik);
         const typ = get(col.typ);
         const dominanz = get(col.dominanz);
         const indicaRaw = get(col.indica);
         const sativaRaw = get(col.sativa);
+        const ruderalisRaw = get(col.ruderalis);
         const thcRaw = get(col.thc);
         const cbdRaw = get(col.cbd);
         const zeitraum = get(col.zeitraum);
@@ -1345,12 +1376,15 @@
           index: r,
           marke,
           strainname,
+          genetik,
           typ,
           dominanz,
           indicaRaw,
           indicaNum: parseNumber(indicaRaw),
           sativaRaw,
           sativaNum: parseNumber(sativaRaw),
+          ruderalisRaw,
+          ruderalisNum: parseNumber(ruderalisRaw),
           thcRaw,
           thcNum: parseNumber(thcRaw),
           cbdRaw,
@@ -1430,7 +1464,6 @@
         (v) => `${v} Seeds`
       );
 
-      // Build unique flavor tags across Geschmack 1, 2, 3
       const flavorMap = new Map();
       allStrains.forEach((s) => {
         s.flavors.forEach((f) => {
@@ -1511,6 +1544,7 @@
           const haystack = [
             item.strainname,
             item.marke,
+            item.genetik,
             item.typ,
             item.dominanz,
             item.zeitraum,
@@ -1592,6 +1626,45 @@
       return `<img src="${escapeHtml(item.bildlink)}" alt="${escapeHtml(item.strainname)}" referrerpolicy="no-referrer" onerror="this.outerHTML = placeholderSvg()" />`;
     }
 
+    function buildRatioHtml(item) {
+      const hasRud = item.ruderalisNum !== null && item.ruderalisNum > 0;
+      if (item.indicaNum === null && item.sativaNum === null && !hasRud) return "";
+
+      const rud = hasRud ? item.ruderalisNum : 0;
+      const ind = item.indicaNum ?? (item.sativaNum !== null ? Math.max(0, 100 - item.sativaNum - rud) : 0);
+      const sat = item.sativaNum ?? (item.indicaNum !== null ? Math.max(0, 100 - item.indicaNum - rud) : 0);
+
+      if (hasRud) {
+        return `
+          <div class="ratio-wrap">
+            <div class="ratio-labels">
+              <span>Indica ${escapeHtml(item.indicaRaw || ind)}%</span>
+              <span>Ruderalis ${escapeHtml(item.ruderalisRaw || rud)}%</span>
+              <span>Sativa ${escapeHtml(item.sativaRaw || sat)}%</span>
+            </div>
+            <div class="ratio-bar">
+              <div class="ratio-indica" style="width:${Math.min(100, Math.max(0, ind))}%"></div>
+              <div class="ratio-ruderalis" style="width:${Math.min(100, Math.max(0, rud))}%"></div>
+              <div class="ratio-sativa" style="width:${Math.min(100, Math.max(0, sat))}%"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="ratio-wrap">
+          <div class="ratio-labels">
+            <span>Indica ${escapeHtml(item.indicaRaw || ind)}%</span>
+            <span>Sativa ${escapeHtml(item.sativaRaw || sat)}%</span>
+          </div>
+          <div class="ratio-bar">
+            <div class="ratio-indica" style="width:${Math.min(100, Math.max(0, ind))}%"></div>
+            <div class="ratio-sativa" style="width:${Math.min(100, Math.max(0, sat))}%"></div>
+          </div>
+        </div>
+      `;
+    }
+
     function render() {
       const tr = t();
       updateActiveFilterBadge();
@@ -1619,23 +1692,7 @@
         if (item.typ) badges.push(`<span class="badge badge-typ">${escapeHtml(item.typ)}</span>`);
         if (item.dominanz) badges.push(`<span class="badge badge-dom">${escapeHtml(item.dominanz)}</span>`);
 
-        let ratioHtml = "";
-        if (item.indicaNum !== null || item.sativaNum !== null) {
-          const ind = item.indicaNum ?? (item.sativaNum !== null ? Math.max(0, 100 - item.sativaNum) : 0);
-          const sat = item.sativaNum ?? (item.indicaNum !== null ? Math.max(0, 100 - item.indicaNum) : 0);
-          ratioHtml = `
-            <div class="ratio-wrap">
-              <div class="ratio-labels">
-                <span>Indica ${escapeHtml(item.indicaRaw || ind)}%</span>
-                <span>Sativa ${escapeHtml(item.sativaRaw || sat)}%</span>
-              </div>
-              <div class="ratio-bar">
-                <div class="ratio-indica" style="width:${Math.min(100, Math.max(0, ind))}%"></div>
-                <div class="ratio-sativa" style="width:${Math.min(100, Math.max(0, sat))}%"></div>
-              </div>
-            </div>
-          `;
-        }
+        const ratioHtml = buildRatioHtml(item);
 
         const specs = [];
         if (item.thcRaw) {
@@ -1686,6 +1743,7 @@
             <div>
               ${item.marke ? `<div class="card-brand">${escapeHtml(item.marke)}</div>` : ""}
               <h2 class="card-title">${escapeHtml(item.strainname)}</h2>
+              ${item.genetik ? `<div class="card-genetics">${escapeHtml(item.genetik)}</div>` : ""}
             </div>
             ${ratioHtml}
             ${specsHtml}
@@ -1708,11 +1766,19 @@
         <button type="button" class="modal-close" id="closeModalBtn" aria-label="${escapeHtml(tr.closeLabel)}">✕</button>
       `;
 
+      const hasRud = item.ruderalisNum !== null && item.ruderalisNum > 0;
+      let ratioValue = "";
+      if (hasRud) {
+        ratioValue = `${item.indicaRaw || "-"}% / ${item.ruderalisRaw}% / ${item.sativaRaw || "-"}%`;
+      } else if (item.indicaRaw || item.sativaRaw) {
+        ratioValue = `${item.indicaRaw || "-"}% / ${item.sativaRaw || "-"}%`;
+      }
+
       const rows = [
         [tr.modalBrand, item.marke],
         [tr.modalTyp, item.typ],
         [tr.modalDominanz, item.dominanz],
-        [tr.modalRatio, item.indicaRaw || item.sativaRaw ? `${item.indicaRaw || "-"}% / ${item.sativaRaw || "-"}%` : ""],
+        [hasRud ? tr.modalRatioRuderalis : tr.modalRatio, ratioValue],
         ["THC", item.thcRaw ? `${item.thcRaw} %` : ""],
         ["CBD", item.cbdRaw ? `${item.cbdRaw} %` : ""],
         [tr.modalZeitraum, item.zeitraum ? `${item.zeitraum} ${tr.daysUnit}` : ""],
@@ -1732,6 +1798,7 @@
         <div>
           ${item.marke ? `<div class="card-brand">${escapeHtml(item.marke)}</div>` : ""}
           <h2 class="card-title" style="font-size:1.3rem;">${escapeHtml(item.strainname)}</h2>
+          ${item.genetik ? `<div class="card-genetics" style="font-size:0.9rem;">${escapeHtml(item.genetik)}</div>` : ""}
         </div>
         ${flavorsHtml}
         <div class="modal-grid">
@@ -1891,5 +1958,3 @@
   </script>
 </body>
 </html>
-
-```
